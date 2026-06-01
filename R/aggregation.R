@@ -18,7 +18,7 @@ prep_data <- function(scweights,
   # Convert list of dataframes to single dataframe
   if (!is.data.frame(scweights)) {
     scweights <- scweights %>%
-      map_dfr(~mutate(., subclass=id[1]))
+      purrr::map_dfr(~mutate(., subclass=id[1]))
   }
 
   list( scweights = scweights,

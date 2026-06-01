@@ -111,7 +111,7 @@ gen_dm <- function(data,
   co_obs <- which(as.logical(!pull(data, {{treatment}})))
 
   tx_covs <- matrix(covs[tx_obs,], ncol = ncol(covs))   # in case only one tx unit
-  co_covs <- covs[co_obs,]
+  co_covs <- covs[co_obs, , drop=FALSE]                 # keep matrix when K=1
 
   # compute (#tx) x (#co) distance matrix
   dm <- flexclust::dist2(tx_covs,

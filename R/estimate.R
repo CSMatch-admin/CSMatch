@@ -770,6 +770,258 @@ get_measurement_error_variance_het <- function(
   ))
 }
 
+#' Het bootstrap with simple-mean residual: U_j = sqrt(omega_j^2 - sum_t w_jt^2) * e_hat_j
+#' where e_hat_j = Y_j - weighted-avg of per-subclass simple control means.
+#'
+#' @param matches A CSM match object or data frame
+#' @param outcome Name of the outcome variable (default "Y")
+#' @param treatment Name of the treatment variable (default "Z")
+#' @param B Number of bootstrap samples (default 250)
+#' @param seed_addition Additional seed for reproducibility (default 11)
+#' @return A tibble with V_E, SE, N_T, ESS_C, CI_lower, CI_upper
+#' @export
+get_measurement_error_variance_het_boot_ej <- function(
+    matches,
+    outcome = "Y",
+    treatment = "Z",
+    B = 250,
+    seed_addition = 11) {
+
+  if (is.csm_matches(matches)) matches <- result_table(matches)
+
+  treatment_sym <- rlang::sym(treatment)
+  outcome_sym   <- rlang::sym(outcome)
+
+  subclass_stats <- matches %>%
+    dplyr::group_by(subclass, !!treatment_sym) %>%
+    dplyr::summarize(mn_wY = sum(!!outcome_sym * weights), .groups = "drop") %>%
+    dplyr::group_by(subclass) %>%
+    dplyr::summarize(
+      D_t = dplyr::last(mn_wY) - dplyr::first(mn_wY),
+      .groups = "drop"
+    )
+
+  N_T           <- nrow(subclass_stats)
+  att_hat       <- mean(subclass_stats$D_t)
+  treated_resid <- subclass_stats$D_t - att_hat
+
+  # Simple (unweighted) mean of control outcomes per subclass
+  subclass_ctrl_mean <- matches %>%
+    dplyr::filter(!!treatment_sym == 0) %>%
+    dplyr::group_by(subclass) %>%
+    dplyr::summarize(mean_Y_ctrl = mean(!!outcome_sym), .groups = "drop")
+
+  # Per-control j: e_hat_j = Y_j - omega_j-weighted avg of simple subclass ctrl means
+  # U_j = sqrt(max(omega_j^2 - sum_t w_jt^2, 0)) * e_hat_j
+  ctrl_df <- matches %>%
+    dplyr::filter(!!treatment_sym == 0) %>%
+    dplyr::left_join(subclass_ctrl_mean, by = "subclass") %>%
+    dplyr::group_by(id) %>%
+    dplyr::summarize(
+      Y_j        = dplyr::first(!!outcome_sym),
+      omega_j    = sum(weights),
+      sum_wjt_sq = sum(weights^2),
+      hat_mu_j   = sum(weights * mean_Y_ctrl) / sum(weights),
+      .groups    = "drop"
+    ) %>%
+    dplyr::mutate(
+      e_hat_j = Y_j - hat_mu_j,
+      U_j     = sqrt(pmax(omega_j^2 - sum_wjt_sq, 0)) * e_hat_j
+    )
+
+  p_up   <- (sqrt(5) - 1) / (2 * sqrt(5))
+  w_lo   <- -(sqrt(5) - 1) / 2
+  w_hi   <-  (sqrt(5) + 1) / 2
+  N_C    <- nrow(ctrl_df)
+  T_star <- numeric(B)
+
+  for (b in seq_len(B)) {
+    set.seed(123 + seed_addition + b * 17)
+    xi_t   <- sample(c(w_lo, w_hi), prob = c(p_up, 1 - p_up), replace = TRUE, size = N_T)
+    zeta_j <- sample(c(w_lo, w_hi), prob = c(p_up, 1 - p_up), replace = TRUE, size = N_C)
+    T_star[b] <- (sum(xi_t * treated_resid) + sum(zeta_j * ctrl_df$U_j)) / N_T
+  }
+
+  SE       <- sd(T_star)
+  V_E      <- SE^2
+  CI_lower <- att_hat - quantile(T_star, 0.975)
+  CI_upper <- att_hat - quantile(T_star, 0.025)
+  Ns       <- calc_N_T_N_C(matches, treatment = treatment)
+
+  tibble::tibble(
+    V_E      = V_E,
+    SE       = SE,
+    N_T      = Ns$N_T,
+    ESS_C    = Ns$N_C_tilde,
+    CI_lower = CI_lower,
+    CI_upper = CI_upper
+  )
+}
+
+
+#' Compute per-unit AI06 sigma_sq for treated and control units.
+#' Performs same-treatment-status k-NN matching to estimate individual variances.
+#'
+#' @param df Full data frame (treated and control).
+#' @param M Number of nearest same-treatment neighbors.
+#' @param covs Character vector of covariate names.
+#' @param treatment Name of treatment variable (default "Z").
+#' @param outcome Name of outcome variable (default "Y").
+#' @param id_name Name of unit ID column (default "id").
+#' @param scaling Per-covariate scaling vector (default: default_scaling).
+#' @param metric Distance metric (default "maximum").
+#' @return Tibble with columns `id` and `sigma_sq`.
+calculate_ai06_individual_variances <- function(
+    df, M,
+    covs      = NULL,
+    treatment = "Z",
+    outcome   = "Y",
+    id_name   = "id",
+    scaling   = NULL,
+    metric    = "maximum") {
+
+  treatment_sym <- rlang::sym(treatment)
+  id_sym        <- rlang::sym(id_name)
+  outcome_sym   <- rlang::sym(outcome)
+
+  if (is.null(covs)) covs <- grep("^X", names(df), value = TRUE)
+  if (is.null(scaling)) scaling <- default_scaling(df, covs)
+
+  df <- df %>% dplyr::mutate(!!id_sym := as.character(!!id_sym))
+
+  # Treated-to-treated matching
+  df_t <- df %>% dplyr::filter(!!treatment_sym == 1)
+  df_t_pool <- df_t %>%
+    dplyr::mutate(!!treatment_sym := 0L,
+                  !!id_sym        := paste0(!!id_sym, "_fake_T"))
+
+  matches_tt <- get_cal_matches(
+    data = dplyr::bind_rows(df_t, df_t_pool),
+    covs = covs, treatment = treatment, metric = metric,
+    rad_method = "knn", k = M + 1L,
+    scaling = scaling, id_name = id_name, warn = FALSE, est_method = "average"
+  )
+
+  sigma_sq_t_list <- purrr::map(matches_tt$matches, function(m) {
+    t_id <- m[[id_name]][1]
+    t_Y  <- df_t %>% dplyr::filter(!!id_sym == t_id) %>% dplyr::pull(!!outcome_sym)
+    nbrs <- m %>% dplyr::filter(!!treatment_sym == 0, dist > 1e-8) %>% dplyr::slice_head(n = M)
+    if (nrow(nbrs) < M) return(tibble::tibble(!!id_sym := t_id, sigma_sq = NA_real_))
+    tibble::tibble(!!id_sym := t_id,
+                   sigma_sq = (M / (M + 1L)) * (t_Y - mean(nbrs[[outcome]]))^2)
+  })
+
+  # Control-to-control matching
+  df_c <- df %>% dplyr::filter(!!treatment_sym == 0)
+  df_c_pool <- df_c %>%
+    dplyr::mutate(!!id_sym := paste0(!!id_sym, "_fake_C"))
+
+  matches_cc <- get_cal_matches(
+    data = dplyr::bind_rows(
+      df_c %>% dplyr::mutate(!!treatment_sym := 1L),
+      df_c_pool
+    ),
+    covs = covs, treatment = treatment, metric = metric,
+    rad_method = "knn", k = M + 1L,
+    scaling = scaling, id_name = id_name, warn = FALSE, est_method = "average"
+  )
+
+  sigma_sq_c_list <- purrr::map(matches_cc$matches, function(m) {
+    c_id <- m[[id_name]][1]
+    c_Y  <- df_c %>% dplyr::filter(!!id_sym == c_id) %>% dplyr::pull(!!outcome_sym)
+    nbrs <- m %>% dplyr::filter(!!treatment_sym == 0, dist > 1e-8) %>% dplyr::slice_head(n = M)
+    if (nrow(nbrs) < M) return(tibble::tibble(!!id_sym := c_id, sigma_sq = NA_real_))
+    tibble::tibble(!!id_sym := c_id,
+                   sigma_sq = (M / (M + 1L)) * (c_Y - mean(nbrs[[outcome]]))^2)
+  })
+
+  dplyr::bind_rows(
+    dplyr::bind_rows(sigma_sq_t_list),
+    dplyr::bind_rows(sigma_sq_c_list)
+  )
+}
+
+
+#' Abadie-Imbens (2006) variance estimator for the ATT.
+#' V_E = (1/N_T)(sum_t sigma_t^2 + sum_j (sum_t w_jt^2) sigma_j^2)
+#' Output format mirrors get_measurement_error_variance_het for compatibility.
+#'
+#' @param df Full original data frame.
+#' @param scmatch CSM match object.
+#' @param M Number of same-treatment neighbors.
+#' @param covs Character vector of covariate names (default: columns starting with "X").
+#' @param treatment Name of treatment variable (default "Z").
+#' @param outcome Name of outcome variable (default "Y").
+#' @param id_name Name of unit ID column (default "id").
+#' @param ... Extra args passed to calculate_ai06_individual_variances (scaling, metric).
+#' @return Tibble with V_E, sigma_hat (NA), N_T, ESS_C, var_calc_df (nested list).
+#' @export
+get_variance_AI06 <- function(
+    df, scmatch, M,
+    covs      = NULL,
+    treatment = "Z",
+    outcome   = "Y",
+    id_name   = "id",
+    ...) {
+
+  id_sym        <- rlang::sym(id_name)
+  treatment_sym <- rlang::sym(treatment)
+
+  if (is.null(covs)) covs <- grep("^X", names(df), value = TRUE)
+
+  sigma_sq_df <- calculate_ai06_individual_variances(
+    df = df, M = M, covs = covs,
+    treatment = treatment, outcome = outcome, id_name = id_name, ...
+  )
+
+  matches_df <- if (is.csm_matches(scmatch)) {
+    result_table(scmatch, nonzero_weight_only = TRUE)
+  } else {
+    scmatch
+  }
+  sample_sizes <- calc_N_T_N_C(matches_df)
+  N_T          <- sample_sizes$N_T
+  ESS_C        <- sample_sizes$N_C_tilde
+
+  # Treated term: (1/N_T) * sum_t sigma_t^2
+  treatment_sym2 <- rlang::sym(treatment)
+  treated_ids <- as.character(dplyr::filter(matches_df, !!treatment_sym2 == 1)[[id_name]])
+  term_T      <- sigma_sq_df %>%
+    dplyr::filter(!!id_sym %in% treated_ids) %>%
+    dplyr::summarise(s = sum(sigma_sq, na.rm = TRUE)) %>%
+    dplyr::pull(s)
+
+  # Control term: (1/N_T) * sum_j (sum_t w_jt^2) * sigma_j^2
+  ctrl_wt <- matches_df %>%
+    dplyr::filter(!!treatment_sym == 0) %>%
+    dplyr::group_by(!!id_sym) %>%
+    dplyr::summarise(
+      total_wt         = sum(weights),
+      total_wt_squared = sum(weights^2),
+      .groups          = "drop"
+    )
+
+  var_calc_df <- ctrl_wt %>%
+    dplyr::left_join(sigma_sq_df, by = id_name) %>%
+    dplyr::mutate(
+      !!treatment_sym    := 0L,
+      avg_var_cluster    = sigma_sq,
+      term               = total_wt_squared * sigma_sq
+    )
+
+  term_C <- sum(var_calc_df$term, na.rm = TRUE)
+  V_E    <- (term_T + term_C) / N_T
+
+  tibble::tibble(
+    V_E       = V_E,
+    sigma_hat = NA_real_,
+    N_T       = N_T,
+    ESS_C     = ESS_C,
+    var_calc_df = list(var_calc_df)
+  )
+}
+
+
 #' Calculate the total variance estimator (V)
 #'
 #' Implements the total variance estimator from the paper, which accounts for
@@ -922,8 +1174,35 @@ get_total_variance <- function(
     sigma_hat_squared <- NA_real_
     N_T               <- v_e_result$N_T
     ESS_C             <- v_e_result$ESS_C
+  } else if (variance_method == "het_boot_ej") {
+    v_e_result <- get_measurement_error_variance_het_boot_ej(
+      matches       = matches_df,
+      outcome       = outcome,
+      treatment     = treatment,
+      B             = B,
+      seed_addition = seed_addition
+    )
+    V_E               <- v_e_result$V_E
+    sigma_hat_squared <- NA_real_
+    N_T               <- v_e_result$N_T
+    ESS_C             <- v_e_result$ESS_C
+  } else if (variance_method == "pooled_het_noW") {
+    # Same V_E as pooled_het; noW means V_correction drops the -sum_wjt_sq diagonal term.
+    v_e_result <- get_measurement_error_variance_het(
+      matches_table    = matches_df,
+      outcome          = outcome,
+      treatment        = treatment,
+      cluster_comb_mtd = cluster_comb_mtd
+    )
+    V_E               <- v_e_result$V_E
+    sigma_hat_squared <- v_e_result$sigma_hat^2
+    N_T               <- v_e_result$N_T
+    ESS_C             <- v_e_result$ESS_C
+    var_calc_df       <- v_e_result$var_calc_df
   } else {
-    stop("variance_method must be 'pooled', 'bootstrap', 'or17', 'pooled_het', 'ai06', 'het_boot', or 'or17_Y'")
+    stop(paste("variance_method must be one of: 'pooled', 'bootstrap', 'or17',",
+               "'pooled_het', 'pooled_het_noW', 'ai06', 'het_boot', 'het_boot_ej',",
+               "'or17_Y'"))
   }
 
   # Calculate treatment effect estimate (tau_hat)
@@ -999,20 +1278,29 @@ get_total_variance <- function(
       stop("Invalid value for `cluster_comb_mtd`. Use either 'sample' or 'average'.")
     }
 
+  } else if (variance_method == "pooled_het_noW") {
+    # noW: drop the -total_wt_squared diagonal correction term
+    V_correction <- var_calc_df %>%
+      dplyr::filter(!!sym(treatment) == 0) %>%
+      dplyr::summarize(
+        V_correction_term = sum(total_wt^2 * avg_var_cluster / N_T, na.rm = TRUE)
+      ) %>%
+      dplyr::pull(V_correction_term)
+
   } else if (variance_method == "ai06") {
     # V_correction logic for ai06
     # Note: 'avg_var_cluster' is the column name we assigned to sigma_j^2
     if (is.null(var_calc_df)) stop("var_calc_df is NULL for ai06")
 
-    V_correction <- as.tibble(var_calc_df) %>%
-      filter(!!sym(treatment) == 0) %>%
-      summarize(
+    V_correction <- tibble::as_tibble(var_calc_df) %>%
+      dplyr::filter(!!sym(treatment) == 0) %>%
+      dplyr::summarize(
         V_correction_term = sum((total_wt^2 - total_wt_squared) * avg_var_cluster / N_T, na.rm = TRUE)
       ) %>%
-      pull(V_correction_term)
+      dplyr::pull(V_correction_term)
 
   } else {
-    V_correction <- 0  # or17 and any other future methods bypass this
+    V_correction <- 0  # or17/het_boot/het_boot_ej/or17_Y: V = N_T*V_E, correction unused
   }
 
 
@@ -1021,7 +1309,7 @@ get_total_variance <- function(
 
   # Calculate population heterogeneity variance (V_P)
   N_T_V_P <- V - N_T * V_E
-  if (variance_method %in% c("bootstrap", "or17", "het_boot", "or17_Y")) {
+  if (variance_method %in% c("bootstrap", "or17", "het_boot", "het_boot_ej", "or17_Y")) {
     V = N_T * V_E
     N_T_V_P = 0
   }
@@ -1042,7 +1330,7 @@ get_total_variance <- function(
     V_correction = V_correction
   )
 
-  if (variance_method %in% c("pooled", "pooled_het", "ai06")) {
+  if (variance_method %in% c("pooled", "pooled_het", "pooled_het_noW", "ai06")) {
     result$sigma_hat <- v_e_result$sigma_hat
   } else if (variance_method == "bootstrap") {
     result$sigma_hat <- sqrt(sigma_hat_squared)

@@ -4,11 +4,12 @@
 # categorical covariates.
 default_scaling <- function( data, covs ) {
   data %>%
-    summarize(across(all_of(covs),
+    dplyr::summarize(dplyr::across(dplyr::all_of(covs),
                      function(x) {
                        if (is.numeric(x)) 1/sd(x)
                        else 1000
-                     }))
+                     })) %>%
+    unlist()
 }
 
 
