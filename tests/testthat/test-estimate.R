@@ -839,6 +839,81 @@ test_that("get_finite_variance: errors without df when use_common_variance=FALSE
   )
 })
 
+# ---- Comparing get_measurement_error_variance vs get_finite_variance(homoskedastic=TRUE) ----
+#
+# Both target S^2*(1/N_T + 1/ESS_C) but differ in how S^2 is computed:
+#   get_measurement_error_variance  -> get_pooled_variance  -> ESS-weighted mean of s_t_sq
+#   get_finite_variance(homo=TRUE)  -> simple mean of s_t_sq
+#
+# Dataset: Y values plausible from N(0, 0.5^2); true S^2 = 0.25 = 0.5^2.
+#   s1 controls: Y=c(-0.3,  0.3), weights=c(0.5, 0.5) -> var=0.18, ESS=2
+#   s2 controls: Y=c(-0.3,  0.5), weights=c(0.3, 0.7) -> var=0.32, ESS=1/0.58≈1.724
+#   C1 (id="C1") appears in both subclasses with Y=-0.3.
+#
+#   Simple-mean  S^2 = mean(0.18, 0.32) = 0.25 = 0.5^2  (true sigma^2)
+#   ESS-weighted S^2 = weighted.mean(c(0.18,0.32), c(2, 1.724)) ≈ 0.245
+#   They differ because the two subclasses have unequal ESS.
+
+mock_homo_matches <- tibble(
+  id       = c("T1","C1","C2",  "T2","C1","C3"),
+  subclass = c("s1","s1","s1",  "s2","s2","s2"),
+  Z        = c(1,   0,   0,     1,   0,   0  ),
+  Y        = c(1.0, -0.3, 0.3,  1.5, -0.3, 0.5),
+  weights  = c(1,   0.5, 0.5,   1,   0.3,  0.7)
+)
+# s_t_sq(s1) = var(c(-0.3, 0.3)) = 0.18
+# s_t_sq(s2) = var(c(-0.3, 0.5)) = 0.32
+# N_T=2, ESS_C = (0.5+0.3+0.7)^2 / (0.5^2+0.3^2+0.7^2) = 1^2 / (0.25+0.09+0.49) = 1/0.83 ≈ wait
+# w_C1 = 0.5+0.3=0.8, w_C2=0.5, w_C3=0.7
+# ESS_C = (0.8+0.5+0.7)^2 / (0.64+0.25+0.49) = 4 / 1.38
+
+test_that("homo S^2: ESS-weighted (get_measurement_error_variance) vs simple mean (get_finite_variance)", {
+  s_t_sq_vals <- c(0.18, 0.32)   # var(c(-0.3,0.3))=0.18, var(c(-0.3,0.5))=0.32
+  ess_s1 <- ess(c(0.5, 0.5))    # = 2
+  ess_s2 <- ess(c(0.3, 0.7))    # = 1/0.58 ≈ 1.724
+
+  S2_ess    <- weighted.mean(s_t_sq_vals, w = c(ess_s1, ess_s2))  # ≈ 0.245
+  S2_simple <- mean(s_t_sq_vals)                                    # = 0.25 = 0.5^2
+
+  # simple mean recovers true sigma^2 = 0.25
+  expect_equal(S2_simple, 0.25, tolerance = 1e-10)
+
+  # ESS-weighted mean differs from simple mean when subclasses have unequal ESS
+  expect_false(isTRUE(all.equal(S2_ess, S2_simple, tolerance = 1e-6)))
+
+  N_T   <- 2
+  ESS_C <- 4 / 1.38   # hand-computed: sum(w_j)^2/sum(w_j^2) for C1,C2,C3
+
+  res_mev <- get_measurement_error_variance(mock_homo_matches, outcome = "Y", treatment = "Z",
+                                            var_weight_type = "ess_units")
+  res_fv  <- get_finite_variance(mock_homo_matches, outcome = "Y", treatment = "Z",
+                                 homoskedastic = TRUE)
+
+  expect_equal(res_mev$V_E, S2_ess    * (1/N_T + 1/ESS_C), tolerance = 1e-6)
+  expect_equal(res_fv$V_E,  S2_simple * (1/N_T + 1/ESS_C), tolerance = 1e-6)
+
+  # The two V_E estimates differ
+  expect_false(isTRUE(all.equal(res_mev$V_E, res_fv$V_E, tolerance = 1e-6)))
+})
+
+test_that("homo S^2: ESS-weighted == simple mean when all subclasses have equal ESS", {
+  # Equal weights in both subclasses => same ESS => weighted mean = simple mean
+  # s1: var(c(-0.3,0.3))=0.18, s2: var(c(-0.4,0.4))=0.32; simple mean=0.25=0.5^2
+  equal_ess <- tibble(
+    id       = c("T1","C1","C2",  "T2","C3","C4"),
+    subclass = c("s1","s1","s1",  "s2","s2","s2"),
+    Z        = c(1,   0,   0,     1,   0,   0  ),
+    Y        = c(1.0, -0.3, 0.3,  1.5, -0.4, 0.4),
+    weights  = c(1,   0.5, 0.5,   1,   0.5,  0.5)
+  )
+  res_mev <- get_measurement_error_variance(equal_ess, outcome = "Y", treatment = "Z",
+                                            var_weight_type = "ess_units")
+  res_fv  <- get_finite_variance(equal_ess, outcome = "Y", treatment = "Z",
+                                 homoskedastic = TRUE)
+
+  expect_equal(res_mev$V_E, res_fv$V_E, tolerance = 1e-6)
+})
+
 test_that("calculate_S1_sq_treated_to_treated: returns list with correct names", {
   set.seed(99)
   df_small <- tibble(

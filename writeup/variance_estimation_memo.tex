@@ -16,6 +16,9 @@
 
 \onehalfspacing
 
+
+\usepackage{multirow}
+
 % Math macros
 \newcommand{\Tset}{\mathcal{T}}
 \newcommand{\Cset}{\mathcal{C}}
@@ -26,44 +29,203 @@
 \newcommand{\E}{\mathbb{E}}
 \newcommand{\Yhatzero}{\hat{Y}_t(0)}
 
+
+% Editing macros
+\usepackage{color}
+\newcommand\cmnt[2]{\qquad{{\color{purple} \em #1---#2} \qquad}}
+\newcommand\cmntM[1]{\cmnt{#1}{Miratrix}}
+\newcommand\awk{{{\color{purple} {$\leftarrow$ Awkward phrasing}}\qquad}}
+\newcommand\cmntMp[1]{{\color{purple} $\leftarrow$ {\em #1 -Miratrix} \qquad}}
+
+% Custom commands
+\newcommand{\ddt}{\frac{d}{dt}}
+\newcommand{\ddtn}[1]{\frac{d^{#1}}{dt^{#1}}}
+\newcommand{\todo}{{\color{red} \textbf{TODO} }}
+\newcommand{\tXt}{\Tilde{X}_t}
+\newcommand{\fle}{\frac{\lambda}{\epsilon}}
+\newcommand{\bX}{\mathbf{X}}
+\newcommand{\Xt}{\mathbf{X}_t}
+\newcommand{\Xj}{\mathbf{X}_j}
+\newcommand{\vj}{\mathbf{v}_j}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Rp}{\mathbb{R}^p}
+
+\newcommand{\ind}[1]{\mathds{1} \{ #1 \} }
+\newcommand{\indep}{\perp \!\!\! \perp}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\note}[1]{\textcolor{red}{\textit{#1}}}
+
+
 \title{Memo: Variance Estimation}
 \author{}
 \date{}
 
 \begin{document}
 
+
 \maketitle
 
-\xmeng{Main comment: i would suggest we remove discussion of {eq:total-variance-estimator} but just keep $\hat{V}_E$. Luke: i guess you might not get this comment. If so, I will explain during our meeting.}
+\section{New section: main paper}
+
 
 Standard error estimation for matching methods is challenging because matched units can violate the independence assumptions underlying conventional approaches \citep{abadie2006large}.
 While coarsened exact matching (CEM) creates disjoint blocks of units, allowing for a direct assumption of as-if blocked randomization (with caveats; see, e.g., \citealp{pashley2021conditional}), our overlapping neighborhoods of units require a different inferential approach.
-To address this, we use an extension of the robust variance approach described in \citet{abadie2006large} that allows for variable weights and does not require a repeated matching step of treated to treated units; see \cite{meng2025varianceestimationmatchingreweighting} for technical details.
+To address this, we use an extension of the robust variance approach described in \citet{abadie2006large} that allows for variable weights; see  \citet{meng2025varianceestimationmatchingreweighting} for technical details.
 Our estimator analytically accounts for reuse-induced dependence without imposing a parametric outcome model.
 
-Unfortunately, this estimator targets the variance with respect to estimating the PATT, rather than the SATT.
-It can thus be taken as a conservative estimator for the SATT estimation uncertainty, similar to how the classic Neyman estimator is conservative as a function of treatment variation \citep{ding2017bridging}.
-We therefore consider a related estimator, built on the strategies presented in, for example, \citet{ben2021augmented}, \citet{keele2023hospital}, and \citet{lu2023you}; this estimator requires a further common-variance assumption, but does target the SATT.
-
-
-
-For our primary estimator, we first estimate a within-set residual variance for the control-side variation using its matched controls for each treated unit $t$:
+Our target is the conditional mean-squared error of $\hat\tau$ for the \emph{sample} ATT,
 \[
-s_t^2
-= \frac{1}{|\Ct|-1}\sum_{j\in\Ct}\left(Y_j-\bar{Y}_t\right)^2,
-\qquad
-\bar{Y}_t=\frac{1}{|\Ct|}\sum_{j\in\Ct}Y_j.
+  \operatorname{CMSE}(\mathrm{SATT})
+  = E\!\left[(\hat\tau - \tau_{\mathrm{SATT}})^2 \;\middle|\; \mathbf{Z},\mathbf{X}\right],
 \]
-We then calculate $s_j^2$ for each control unit $j$ as the average of all $s_t^2$ values for treated units matched to that control.
-\footnote{$s_t^2$ is undefined when $|\Ct|=1$, which can in turn leave some controls without a defined $s_j^2$. In practice, such units can be dropped if they are rare. Asymptotically, this issue vanishes, and its finite-sample impact is negligible when residual variances are approximately homoskedastic or only weakly related to covariates and weights.}
-As with heteroskedasticity-robust estimators, these are noisy local estimates of residual variance that are then averaged over the sample to obtain an overall uncertainty estimate.
+where $\tau_{\mathrm{SATT}} = n_T^{-1}\sum_{t\in\mathcal{T}}(Y_{t1}-Y_{t0})$.
+The CSME is conditional on the observed treatment assignment and covariates, and does not include the sampling variance of $\tau_{\mathrm{SATT}}$ around the population ATT.
+It does not account for any bias due to imperfect matching.
 
-%As discussed in Online Supplement 5, the overall uncertainty estimate relies on a variance decomposition that separates the total variance into two components: sampling variability due to residual outcome noise ($V_E$) and variability arising from treatment effect heterogeneity ($V_P$).
-The target of inference is a superpopulation $\ATT$, meaning that the uncertainty estimate includes uncertainty arising from the treated units being nonrepresentative because of treatment effect heterogeneity.
-We view this as a conservative estimator for the $\SATT$, similar to how the Neyman estimator is conservative in the presence of treatment effect variation. \xmeng{Can remove this paragraph because it repeats the second paragraph.}
+Our primary estimator parallels Neyman's classic variance formula:
+\begin{align}
+  \label{eq:plug-in-variance-estimator-naive}
+  \hat{V}_E^{\text{alt}}
+  = \frac{S^2_1}{n_T} + \frac{S^2_0}{\mathrm{ESS}(\mathcal{C})} ,
+\end{align}
+where $\mathrm{ESS}(\mathcal{C})$ is the effective sample size discussed above.
+
+There are a few choices for estimating $S_0^2$ and $S_1^2$, each depending on different underlying assumptions (such as homoskedasticity or heteroskedasticity).
+A core component for all are estimates of the local residual variance terms, $\sigma^2_{z}(x) = \Var( Y_i(z) |X_i=x)$.
+For $z=0$, we have
+\[
+s_{0t}^2 = \frac{1}{|\Ct|-1}\sum_{j\in\Ct}\left(Y_j-\bar{Y}_t\right)^2,
+\qquad
+\bar{Y}_t=\frac{1}{|\Ct|}\sum_{j\in\Ct}Y_j, 
+\]
+for the treated units.
+We calculate corresponding $s_{0j}^2$ for each control unit $j$ as the average of all $s_{0t}^2$ values for treated units matched to that control.
+See supplement for handling undefined estimates for those units with singleton matches.
+
+Using the $s_{0j}$, estimate $S_0^2$ as a $w_j^2$-weighted average:
+\[
+  S^2_0
+  = \frac{\sum_{j\in\mathcal{C}} w_j^2\, s_j^2}{\sum_{j\in\mathcal{C}} w_j^2} ,
+\]
+where $w_j$ is the total weight assigned to unit $j$ across all matched sets.
+
+For estimating $S^2_1$, we want $S^2_1 \approx n_T^{-1}\sum_{t\in\mathcal{T}}\sigma^2_1(x_t)$.
+To estimate, simply plug in individual estimates $s_{1t}^2$ for the $\sigma^2_1(x)$ terms.
+We offer two strategies for estimating $s^2_{1t}$:
+
+\paragraph{Case 1: under common variance ($\sigma^2_1(x)=\sigma^2_0(x)$).}
+If we can assume treated and control potential outcomes share the same noise variance, beyond any systematic treatment variation explained by the $X_t$, then simply use use $s_{0t}^2$ as an estimate of $s_{1t}^2$.
+
+\paragraph{Case 2: no common variance.}
+If no common variance assumption is plausible, we can estimate $\sigma^2_1(x_t)$ directly.
+Match each treated unit $t$ to its $K$ nearest treated neighbors $\mathcal{T}_t$ (excluding itself), and then calculate
+\[
+  \hat{s}^2_{1t} = \frac{K}{K+1} \left(Y_t - \frac{1}{K}\sum_{t'\in\mathcal{T}_t} Y_{t'}\right)^2
+\]
+When $\sigma^2_1(x_{t'})\approx\sigma^2_1(x_t)$ for nearby units, this is an approximately unbiased estimate of $\sigma^2_1(X_t)$ (see supplement).
+The no common variance estimator does not need that assumptions, but is more unstable for estimation.
+
+Overall, these variance estimators assume smoothness in the conditional variance $\sigma^2_z(x)$, along with some other regularity conditions.
+See \citet{meng2025varianceestimationmatchingreweighting} for complete details.
+
+In general, they are similar to heteroskedasticity-robust estimators in that they average noisy local estimates of residual variance over the sample to obtain an overall uncertainty estimate.
+The final variances depend on the correlation of unit weights and the size of $\sigma^2_z(x)$, and large-weight units can make uncertainty estimation difficult; further homoskedasticity assumptions of $\sigma^2_z(x)=\sigma_z^2$ can offer additional stabilization.
+We can also target population quantities by rewriting the variance term into two sources of error: the measurement error and the error from treatment variation.
+Extended discussion is in our supplement, along with a simulation to compare the performances of the different approaches.
+Overall, we find performance is generally good except when there is very low overlap between treated and control units, because the effective control sample size is smallest in that setting.
 
 
-Our final estimator is then an estimate of treatment variation coupled with measurement error, with an adjustment term that accounts for possible heteroskedasticity across the sample:
+\section{New supplement: Variance Estimation}
+\label{app:var-est}
+
+We give some further detail on variance estimation the following, but refer to our companion paper, \citet{meng2025varianceestimationmatchingreweighting}, for full technical detail and theoretical results.
+Also see the robust variance approach described in \citet{abadie2006large}.
+In \citet{meng2025varianceestimationmatchingreweighting}, we offer two types of variance estimators, the first targeting the $PATT$ and the second the $SATT$.
+
+For the first, the target of inference being a superpopulation $\ATT$ means that the uncertainty estimate includes uncertainty arising from the treated units being nonrepresentative because of treatment effect heterogeneity.
+It can, however, be taken as a conservative estimator for the SATT estimation uncertainty, similar to how the classic Neyman estimator is conservative as a function of treatment variation \citep{ding2017bridging}.
+
+All the variance estimators we consider use the residuals within matched clusters to estimate residual uncertainty, which then provides a variance estimator that takes into account the overall effective sample size (ESS) imposed by the final control weights.
+
+Our use of the effective sample size (ESS) draws on the design-effect literature \citep{kish1965survey, lohr2021sampling}, which characterizes the precision loss due to complex sampling designs relative to simple random sampling.
+In our context, the ``complex design'' arises from the variable weights assigned to controls through the synthetic-control and matching steps.
+
+It is important to distinguish our estimator from standard cluster-robust standard errors often used in post-matching inference \citep{abadie2022robust}.
+Cluster-robust methods typically assume independence across clusters.
+In matching with replacement (e.g., radius matching), matched sets overlap because a single control unit may appear in multiple sets, which violates this assumption.
+By contrast, our estimators explicitly account for this overlap by aggregating weights at the control unit level, thereby capturing the covariance structure induced by control reuse. 
+
+
+\subsection{The full variance estimation framework}
+
+For the PATT-targeting variance estimator, first write the CSM estimator as
+\[
+\hat{\tau}
+= \frac{1}{n_T} \sum_{t \in \mathcal{T}} \left( Y_t - \hat{Y}_t(0) \right),
+\qquad
+\hat{Y}_t(0)=\sum_{j\in\mathcal{C}_t} w_{jt} Y_j,
+\]
+with weights $w_{jt}$ defined by the synthetic-control step within each caliper in Section 2.
+Throughout this section, $\tau$ denotes the population average treatment effect on the treated (PATT)\footnote{This is a slight change of notation: in the main paper, we denote SATT as $\tau$.},
+\[
+\tau
+=E\!\left[Y(1)-Y(0)\mid T=1\right].
+\]
+The sample average treatment effect on the treated (SATT) is
+\[
+\bar{\tau}
+=\frac{1}{n_T}\sum_{t\in\mathcal{T}}\{Y_t(1)-Y_t(0)\},
+\]
+which converges to $\tau$ under the population sampling framework in \citet{meng2025varianceestimationmatchingreweighting}.
+
+Under the model $Y_i(z)=f_z(\bX_i)+\epsilon_{z,i}$, we decompose
+\[
+\hat{\tau}-\tau
+= B_n + E_n + P_n,
+\]
+where
+\begin{align*}
+B_n
+&=
+\frac{1}{n_T} \sum_{t \in \mathcal{T}} \sum_{j \in \mathcal{C}_t}
+    w_{jt} \bigl( f_0(\bX_t) - f_0(\bX_j) \bigr)
+    && \text{(bias from imperfect matching)}\\[2pt]
+E_n
+&=
+\frac{1}{n_T} \sum_{t \in \mathcal{T}}
+    \left( \epsilon_{1,t} - \sum_{j \in \mathcal{C}_t} w_{jt} \epsilon_{0,j} \right)
+    && \text{(sampling error from residual noise)}\\[2pt]
+P_n
+&=
+\overline{\text{CATE}}-\tau
+    && \text{(representation error in treated covariates)}.
+\end{align*}
+Here $\text{CATE}(\bX_i)=f_1(\bX_i)-f_0(\bX_i)$ is the conditional average treatment effect and
+\[
+\overline{\text{CATE}}
+=\frac{1}{n_T}\sum_{t\in\mathcal{T}}\text{CATE}(\bX_t)
+\]
+is its average over the treated units; equivalently, $\overline{\text{CATE}}$ is the conditional expectation of the SATT given $\{\bX_t:t\in\mathcal{T}\}$.
+
+Under some smoothness and overlap conditions, \citet{meng2025varianceestimationmatchingreweighting} show that the two stochastic terms $E_n$ and $P_n$ admit a joint central limit theorem:
+\[
+\sqrt{n_T}\,(\hat{\tau}-\tau-B_n)
+\overset{d}{\longrightarrow}
+N(0,V),
+\]
+where $V$ decomposes into a \emph{measurement-error component} and a \emph{heterogeneity component}. In our notation,
+\[
+V_E=Var(E_n|X, Z),
+\qquad
+V_P=Var(P_n|Z=1),
+\qquad
+V = V_E + V_P,
+\]
+
+where $V_E$ conditions on $(\bX,\mathbf{Z})$ because $E_n$ depends on the realized matching weights and reused controls, while $V_P$ depends only on the superpopulation variability of treatment effects among treated units (hence conditioning only on $Z=1$).
+Both are components of the same conditional asymptotic variance $V$ that appears in the CLT; see \citet{meng2025varianceestimationmatchingreweighting} for the formal statement and interpretation.
+
+To estimate variance, we can use a combination of an estimate of treatment variation coupled with measurement error, with an adjustment term that accounts for possible heteroskedasticity across the sample:
 \begin{align}
 \label{eq:total-variance-estimator}
 \widehat{\Var}(\hat{\tau})
@@ -80,37 +242,201 @@ Our final estimator is then an estimate of treatment variation coupled with meas
 \right]}_{\text{covariance adjustment (robust form)}}.
 \end{align}
 Here, $\hat{Y}_t(0)$ is the imputed counterfactual from the synthetic control for unit $t$.
-%As discussed in Online Supplement 5, the overall uncertainty estimate relies on a variance decomposition that separates the total variance into two components: sampling variability due to residual outcome noise ($V_E$) and variability arising from treatment effect heterogeneity ($V_P$).
 
 The first term captures the empirical dispersion of the estimated unit-level effects $\{Y_t-\hat{Y}_t(0)\}_{t\in\Tset}$.
 The second adjusts for dependence induced by control reuse in overlapping matched sets by weighting each control's contribution by its reuse factor and local residual variance, yielding valid inference under heteroskedasticity.
+
+Under a further homoskedasticity assumption, or assumption of independence between the weights and the conditional variance, the second term of the above can be simplified to 
+
+\begin{align}
+\label{eq:total-variance-estimator-homo}
+\widehat{\Var}(\hat{\tau})
+&=
+\underbrace{\frac{1}{n_T^2}\sum_{t\in\Tset}
+\left\{Y_t-\hat{Y}_t(0)-\hat{\tau}\right\}^2}_{\text{overall dispersion of estimated unit-level effects}}
+\nonumber\\
+&\quad+
+S^2 \underbrace{\frac{1}{n_T^2}\sum_{j\in\Cset} 
+\left[
+\left(\sum_{t'\in\Tset} w_{jt'}\right)^2
+-
+\sum_{t'\in\Tset} w_{jt'}^2
+\right]}_{\text{covariance adjustment (robust form)}}.
+\end{align}
+This estimator can be more stable in the face of large control weights or small samples.
+See our comparisons in our simulation evaluation, below.
+
+
 \citet{meng2025varianceestimationmatchingreweighting} establish asymptotic results that justify valid confidence intervals.
 The asymptotic theory assumes that the control sample grows and the caliper shrinks so that the number of close matches per treated unit increases, along with standard regularity conditions including bounded error moments and continuity of the residual variance across the covariate space.
 These conditions ensure similar error variances for matched units and asymptotically exact matching on discrete covariates.
 
-Our estimator differs from standard cluster-robust approaches \citep{abadie2022robust}; a comparison to \citet{abadie2006large}, along with additional implementation details, is provided in Online Supplement 5.3.
+Our approach extends the variance estimators proposed by \citet{abadie2006large, abadie2011bias, abadie2012martingale}.
+There are three primary points of difference:
 
-For the above estimator, the target of inference is a superpopulation $\ATT$, meaning that the uncertainty estimate includes uncertainty arising from the treated units being nonrepresentative because of treatment effect heterogeneity.
-This can be viewed as a conservative estimator for the $\SATT$, but if we are instead willing to assume the conditional treatment residual variance $\sigma^2_1(X)$ equals $\sigma^2_0(X)$ (after removing systematic treatment variation as a function of $X$), then we can use a simpler estimator of: \xmeng{there are three steps: First step: if one assumes that the treatment effect heterogeneity is zero, then an asymptotically equivalent version of Equation~\ref{eq:total-variance-estimator} is Equation~\ref{eq:plug-in-variance-estimator-naive} below; second step: if one assumes $\sigma^2_1(x)$ equals $\sigma^2_0(x)$, then one would take the common variance version of Equation~\ref{eq:plug-in-variance-estimator-naive}; third step: if one then assumes $\sigma^2_0(x)$ are all same across $x$, then the common variance version of Equation~\ref{eq:plug-in-variance-estimator-naive} would be equivalent to Equation~\ref{eq:plug-in-variance-estimator-naive-homo}}
+\begin{itemize}
+    \item \textbf{Flexible weights:} The original Abadie--Imbens results focus primarily on fixed $M$-nearest-neighbor matching with uniform weights. CSM uses overlapping neighborhoods and synthetic-control weights chosen to reduce local imbalance. After matching, \citet{abadie2006large} weights each unit by $1/M$. Our theoretical result allows for the weights to vary more fully.
 
+    \item \textbf{Cluster-based vs.\ nearest-neighbor residuals:} \citet{abadie2006large} estimate variance by matching each unit to its nearest neighbors within the \emph{same} treatment arm (e.g., matching treated to treated). Our method instead exploits the matched control cluster $\mathcal{C}_t$ for each treated unit $t$. We estimate residual variability using the dispersion of outcomes within $\mathcal{C}_t$ (i.e., $s_t^2$) around the cluster mean. \citet{meng2025varianceestimationmatchingreweighting} show that this cluster-based estimator is asymptotically more efficient because it averages over all $|\mathcal{C}_t|$ controls rather than a fixed number of nearest neighbors.
+    
+    \item \textbf{Computational efficiency:} Our approach does not require additional matching among treated units or among control units. This reduces computational cost, particularly when using complex distance metrics or solving the synthetic-control optimization within each caliper.
+
+\end{itemize}
+
+In the above, we report a single plug-in estimator $\hat V$ that directly targets the total variance $V$, which can be expressed as the sum of $V_E$ and $V_P$ (see \citet{meng2025varianceestimationmatchingreweighting}).
+Operationally, $\hat V$ can be written as the sum of an empirical dispersion term and a reuse-induced covariance adjustment.
+Together, these components yield a consistent estimator of $V$ under heteroskedasticity, which is the form presented in the paper.
+
+
+
+\subsection{Further discussion of the SATT targeting estimator}
+
+
+As given in the main paper, we calculate $s_{0t}^2 = \widehat{\operatorname{Var}}(Y_{j} : j\in\mathcal{M}_t,\, Z_j=0)$, which is the sample variance of control outcomes within treated unit $t$'s matched set.
+We then estimate the $s_{0j}^2$ as
+\[  
+s_{0j}^2 = \frac{1}{\lvert\{t : j\in\mathcal{M}_t\}\rvert}
+    \sum_{\substack{t\in\mathcal{T}: \\ j\in\mathcal{M}_t}} s_t^2 .
+\]
+Averaging across the $s_j^2$ terms makes the estimator robust to heteroskedasticity, analogous to an Eicker--Huber--White sandwich estimator adapted to the matching-weight structure.
+
+That said, $s_{0t}^2$ is undefined when $|\Ct|=1$, which can in turn leave some controls without a defined $s_{0j}^2$.
+Variance estimates simply using the defined units could be slightly biased if the dropped units had very different $\sigma^2_z(x)$ than what we see for those units with multiple matches.
+Asymptotically this issue vanishes, and the finite-sample impact is negligible when the proportion of dropped units is small or if the residual variances are approximately homoskedastic or only weakly related to covariates and weights.
+
+
+The presented estimator can be simplified further to a na\"ive (homoskedastic) estimator:
  \begin{align}
- \label{eq:plug-in-variance-estimator-naive-homo}
+ \label{eq:plug-in-variance-estimator-naive}
      \widehat{Var}(\hat{\tau})
      = S^2 \left( \frac{1}{n_T} + \frac{1}{ESS(\mathcal{C})} \right).
  \end{align}
-where $S^2$ is the average of the $s_t^2$.
+Here we calculate $S^2$ as the average of the $s_t^2$.
+
+This expression has a familiar form: it is the pooled two-sample $t$-test variance, with $n_T$ treated units and an \emph{effective} number of controls given by $ESS(\mathcal{C})$.
+It is assuming homoskedasticity across treatment arms and covariate space.
+This estimator also works if any heteroskedasticity across the control units is independent of the weight assigned to the unit.
+
+These estimators are targeting only the $E_n$ portion of the above variance decomposition in the prior section.
+In other words, we are conditioning on the observed $X_t$ across the treated units, and thus this is a more ``finite sample'' targeting uncertainty estimator.
+
+Also see the strategies presented in, for example, \citet{ben2021augmented}, \citet{keele2023hospital}, and \citet{lu2023you} for related uncertainty estimation approaches.
+% See \citet{meng2025varianceestimationmatchingreweighting} for connections between this approach and the prior approach as well.
 
 
-This estimator more explicitly targets the $\SATT$ as defined by the set of covariate values of the treated units.
-See Online Supplement 5.3.
+\subsection{Matching treated to treated units}
+
+We generally view the common variance assumption as roughly plausible.
+Consider the following working model:
+
+$$ Y_i(0) = f(X_i) + e_{i} $$
+$$Y_i(1) = Y_i(0) + \tau(X_i) + \delta_{i}$$
+
+Under this model, the individual treatment effects are $\tau_i = Y_i(1)-Y_i(0) = \tau(X_i) + delta_{i}$.
+The $\tau(x)$ is the systematic variation, i.e. $E[ \tau_i | X_i = x ]$.
+
+Now, if there is no major treatment variation beyond systematic variation captured by $X$, then we have the common variance assumption since $\delta_i = 0$ and then $var(Y(1)|X=x) = var( e_i ) = \sigma^2_0(x)$.
+
+%Alternatively, if we think of ourselves as estimating the SATT \emph{for the specific units in the sample} (so not just conditioning on $X_1$ but conditioning on the treated units themselves), then $delta_{i}$ could be thought of as conditioned out.
+%I.e., we want the $\delta_i$ to be part of our estimate of $\bar{Y}(1)$, and the only thing left is the uncertainty that is correlated with the control side.
+%We then just need uncertainty on the $e_{i}$, which is the same as the common variance assumption. \xmeng{i do not think this is clean because this means conditioning on $Y_t(1)$ which is hard to justify why we do it. }
+
+That said, one can instead match treated to treated units.
+This can be unstable if the treated units are few and are very far from each other, but it may be preferable to the common variance assumption if it is strongly violated.
+
+For this matching, if we assume $\sigma^2_1(x_{t'})\approx\sigma^2_1(x_t)$ for nearby units, our matching variance estimator is an unbiased estimate of $\sigma^2_1(X_t)$ given:
+\begin{align*}
+  E\!\left[\hat{s}^2_{1t}\;\middle|\; x_t\right] &= E\!\left[ \frac{K}{K+1} \left(Y_t - \frac{1}{K}\sum_{t'\in\mathcal{T}_t} Y_{t'}\right)^2 \right] \\
+  &= \frac{K}{K+1}\cdot\sigma^2_1(x_t)\!\left(1+\tfrac{1}{K}\right) \\
+  &= \sigma^2_1(x_t).	
+\end{align*}
 
 
-\subsection{Assess the Quality of the Variance Estimator (PA submitted version on Jan 2026)}
+
+
+
+
+\section{Simulation Evaluation of the Variance Estimators}
 \label{sec:Inference-Results}
 
-We assess our variance estimator by revisiting the toy example with varying degrees of overlap. We increase overlap by adjusting the proportion of control units distributed uniformly over the space, and generate 1000 trials for each scenario.
-To ensure the variance estimator is fully defined, we set our adaptive caliper to always include at least five units, rather than one.
+We assess our variance estimator by revisiting several variants of the toy example presented in the main paper.
+
+For our estimator, we use $k=2$ adaptive SCM matching, $n_T=100$, $n_C=500$, 998 replications.
+\cmntM{What estimator is this?  This is we have a caliper, but expand it to include at least 2 units for each treated unit?  We then calculate SCM weights for each matched set?}
+\xmeng{This is totally correct.}
+
+
+
+
+We consider the following four variance estimators:
+
+\begin{itemize}
+	\item \texttt{het}: Equation~\ref{eq:plug-in-variance-estimator-naive}; allows for heteroskedasticity and incorporates finite-sample uncertainty.
+	
+	\item \texttt{alt-c}: Equation~\ref{eq:V_E^alt} with $\bar{S}^2 = S^2_1 = \frac{1}{n_T}\sum_{t\in\mathcal{T}} s_t^2$; uses variance constructed from the control side.
+	
+	\item \texttt{alt-tt}: Equation~\ref{eq:V_E^alt} with $\bar{S}^2 = \frac{1}{n_T}\sum_{t\in\mathcal{T}} s_{1t}^2$; estimates variance by matching each treated unit to its $K=2$ nearest treated neighbors.
+	
+	\item \texttt{homo}: Equation~\ref{eq:plug-in-variance-estimator-naive-homo}; assumes homoskedasticity as well as the common variance assumption.
+\end{itemize}
+
+Note that alt-c and het are asymptotically equivilent.
+
+
+\cmntM{ The four estimators are which, exactly?  We have het, alt-c, alt-tt, and homo.  Which are which, in terms of the above?  alt-tt is match treated to treated?   How many matches do you make?  homo is Equation 2?  Please verify these.  You say alt-c and het are the same, so why do you have them twice? Are they not always the same?}
+\xmeng{alt-c and het are asymptotically the same but not always so in finite sample. Specifically: \texttt{het} is Equation~\ref{eq:plug-in-variance-estimator-naive} case 1 (heteroskedastic, finite sample uncertainty); \texttt{alt-c} is Equation~\ref{eq:V_E^alt} with $\bar{S}^2 = S^2_1 = \frac{1}{n_T}\sum_{t\in\mathcal{T}} s_t^2$ (cluster variance from control side); \texttt{alt-tt} is Equation~ Equation~\ref{eq:V_E^alt} with $\bar{S}^2 = \frac{1}{n_T}\sum_{t\in\mathcal{T}} s_{1t}^2$  with cluster variance by matching treated to treated ($K=2$ nearest treated neighbors); \texttt{homo} is Equation~\ref{eq:plug-in-variance-estimator-naive-homo}. I include both alt-c and het because they target different quantities (SATT vs.\ population ATT), even though their formulas coincide asymptotically.}
+
+\cmntM{How can they target different estimands but coincide? TO DISCUSS}
+
+
+Our simulation framework is then as follows.
+We first systematically vary the degree of overlap by adjusting the proportion of control units distributed uniformly over the space, generating 1000 trials for each scenario.
+
+
+To assess the variance estimators in terms of heteroscedasticity we also added an additional model on the residuals.
+In particular, for our ``heteroskedastic'' simulations, we use a bimodal heteroskedastic design with
+\[
+  \sigma_0(x) = 0.2
+    + 5\!\left[e^{-\|x-(0.25,0.25)\|^2/0.08}
+             + e^{-\|x-(0.75,0.75)\|^2/0.08}\right],
+\]
+placing high noise at the two treated cluster centers and large $\operatorname{Cov}_p(w_j,s_j^2)$.
+
+Finally, we have a third factor of our common variance assumption.
+We consider two scenarios, \textbf{common} where we have the common variance assumption $(\sigma_1=\sigma_0)$ and \textbf{no common} where we have substantial treatment variation so the common variance assumption is violated $(\sigma_1=\sigma_0+0.5)$.
+
+This gives a three-factor simulation: degree of overlap (five levels), heteroskedasticity vs. homoskedasticity, and common variance vs. no common variance.
+Our performance measure is coverage, i.e. the fraction of replications in which $[\hat\tau \pm 1.96\sqrt{\hat{V}_E}]$ contains $\tau_{\mathrm{SATT}}$ for that replication.
+
+
+
+
+\begin{verbatim}
+	
+
+NOW OUR SIMULATION IS MORE CLEANLY DESIGNED
+
+TO DO: 
+
+RUN THIS SIMULATION OVER 5 x 2 x 2 = 20 scenarios and
+ save all the results in a single file.
+
+Then make the following coverage plots
+
+x-axis: overlap
+y-axis: coverage
+color: variance estimator
+facet grid with hetero vs not, common variance vs. not
+
+
+\end{verbatim}
+
+
+To ensure the variance estimator is fully defined, we set our adaptive caliper to always include at least five units, rather than one. \cmntM{Can we not do this, and use our core estimator from the paper?  What will break if we do that?}
 %in dense regions and expanding to include at least one unit in sparse areas.
+
+
+
 
 \begin{table}[hbt!]
 \centering
@@ -131,7 +457,7 @@ To ensure the variance estimator is fully defined, we set our adaptive caliper t
 \label{tab:toy_var_pooled_vs_het}
 \end{table}
 
-
+\cmntM{We need to rerun this core simulation with our four core estimators}
 
 Table~\ref{tab:toy_var_pooled_vs_het} summarizes the results.
 As overlap increases, more control units fall within treated units' calipers, so $\tilde{N}_C$ increases.
@@ -139,123 +465,94 @@ The true standard error decreases with overlap because matches are closer and th
 Both estimators achieve close-to-nominal 95\% coverage and produce estimated standard errors close to the Monte Carlo truth; in this design, the homoskedastic and heteroskedastic estimators behave very similarly.
 
 
-\xmeng{In the table, the heteroskedastic estimator is Equation \ref{eq:total-variance-estimator}. The homoskedastic estimator is Equation \ref{eq:total-variance-estimator-homo}} 
-\begin{align}
-\label{eq:total-variance-estimator-homo}
-\widehat{\Var}(\hat{\tau})
-&=
-\underbrace{\frac{1}{n_T^2}\sum_{t\in\Tset}
-\left\{Y_t-\hat{Y}_t(0)-\hat{\tau}\right\}^2}_{\text{overall dispersion of estimated unit-level effects}}
-\nonumber\\
-&\quad+
-S^2 \underbrace{\frac{1}{n_T^2}\sum_{j\in\Cset} 
-\left[
-\left(\sum_{t'\in\Tset} w_{jt'}\right)^2
--
-\sum_{t'\in\Tset} w_{jt'}^2
-\right]}_{\text{covariance adjustment (robust form)}}.
-\end{align}
-
-
-
-\section{\sout{Possible Alternative} Variance estimator}
-
-The quantity we are estimating is $ CMSE(SATT) =  E[ (\hat{\tau} - \tau - B_n)^2 | \mathbf{Z}, \mathbf{X} ] $
-
-
-We can split the treatment and control like this:
-
- \begin{align}
- \label{eq:plug-in-variance-estimator-naive}
-     \widehat{Var}(\hat{\tau}) 
-     = \frac{S^2_1}{n_T} + \frac{S^2_0}{ESS(\mathcal{C})}
- \end{align}
-where \sout{$S^2_0$ is the simple average of the $s_t^2$}
-$S^2_0 = \frac{\sum_{j \in \mathcal{C}} (w_j)^2 s_{j}^2}{\sum_{j \in \mathcal{C}} (w_j)^2}$ is the Weighted-Average Control-Cluster Variance. See the main memo for the definition of $s_j^2$.
-
-% NOTE: We should call $s_t^2$ $s_{0t}^2$ for the estimated residual variance of the control potential outcomes when $X=X_t$.
-
-NOTE: This estimator $\frac{S^2_1}{n_T} + \frac{S^2_0}{ESS(\mathcal{C})}$ is $\hat{V}_E$ on the inference paper.
-
-For $S^2_1$, we can estimate two ways:
-
-Common variance assumption: \sout{$S^2_1 = S^2_0$.} if $\sigma^2_1(x)= \sigma^2_0(x)$  for all $x$, then
-% $S^2_1 = S^2_0$.
-$S^2_1 = \frac{1}{n_T} \sum_{t \in \mathcal{T}} s_{t}^2$ is a consistent estimator of $CMSE(SATT)$. See the main memo for the definition of $s_t^2$ 
-% is the simple average of the $s_t^2$.
-
-xmeng: the consistency is fully proven, but on (next version of) the inference paper, we need to make it clear that this estimator ($\hat{V}_E$ is estimating the CMSE(SATT).
-
-luke: Doesn't this imply (4) -> S(1/n + 1/ESS)?
-
-xmeng: no, becasue (4) "collapses" to $\hat{V}_E^{\text {alt }}=S^2\left(\frac{1}{n_T}+\frac{1}{\mathrm{ESS}(\mathcal{C})}\right)+\frac{1}{n_T} \operatorname{Cov}_p\left(w_j, s_j^2\right)$ and the covariance term does not go to zero because how $S^2_0$ is defined. 
-
-No assumption: if one does not accept $\sigma^2_1(x)= \sigma^2_0(x)$  for all $x$, then
-$S^2_1 = \frac{1}{n_T} \sum_{t \in \mathcal{T}} s_{1t}^2$ is a consistent where $s^2_{1t}$ is obtained by matching treated to treated:
-% is the simple average of the $s_t^2$.
-for each treated unit, match $t$ to set of $K$-nearest treated units $ \mathcal{T}_t$, calculate 
-$$s^2_{1t} = (Y_{t} - \sum_{t' \in \mathcal{T}_t} w_{t t'} Y_{t'})^2$$
-%and then $$ S_1^2 = \frac{1}{n_t} \sum_t s^2_{1t} $$
-where $w_{t t'}$ is weight assigned to the matched pair $t, t'$, e.g., $w_{t t'}=1/K$
-
-xmeng: the consistency fully proven on my draft and will be put on the next version of the inference paper.
-
-
-QUESTION: Is this workable? 
-
-xmeng: Yes.
-
-QUESTION: Is this proven by your paper? 
-
-xmeng: Not yet. I'm planning to add.
-
-QUESTION: What is the overall variacne estimator estimating?  Is it estimating 
-
-$$ E[ (\hat{\tau} - \tau - B_n)^2 | \mathbf{Z}, \mathbf{X} ] $$
-
-I.e., the variance assuming we hold the support of our treated units fixed?
-
-xmeng: Yes. i.e., the variance of SATT, not PATT.
-
-
-
-\paragraph{The pooled variance estimator} Under common variance assumption AND homoskedacity, we can use Equation~\ref{eq:plug-in-variance-estimator-naive-homo}
-
-
-
-\section{Suggestions to edit on the variance section result }
-
-\subsection{Suggestion to change the main section}
-
-Change the table from the current PATT-oriented inference table \ref{tab:toy_var_pooled_vs_het} to the proposed SATT-oriented table \ref{tab:toy_var_pooled_vs_het-V_E}. The discussion of the simulation results does not need to change (the pooled and heteroskedastic versions still track the Monte Carlo standard errors reasonably well, and coverage remains close to nominal across most overlap regimes). The main additional point is that in the very low overlap case, coverage becomes somewhat less stable because the effective control sample size $\tilde{N}_C$ is small.
-
-\begin{table}[hbt!]
+\begin{table}[ht]
 \centering
-\begin{tabular}{lcccccc}
-  \hline
-  & & & \multicolumn{2}{c}{Homoskedastic} & \multicolumn{2}{c}{Heteroskedastic} \\
-  \cmidrule(lr){4-5} \cmidrule(lr){6-7}
-  Overlap & $\tilde{N}_C$ & True SE & Est. SE & Coverage & Est. SE & Coverage \\ 
-  \hline
-  Very High & 53.1 & 0.0826 & 0.0877 & 0.950 & 0.0872 & 0.945 \\ 
-  High      & 44.2 & 0.0890 & 0.0931 & 0.946 & 0.0925 & 0.944 \\ 
-  Medium    & 34.0 & 0.1020 & 0.1040 & 0.941 & 0.1030 & 0.941 \\ 
-  Low       & 25.1 & 0.1110 & 0.1180 & 0.942 & 0.1170 & 0.934 \\ 
-  Very Low  & 17.0 & 0.1350 & 0.1440 & 0.916 & 0.1430 & 0.913 \\ 
-   \hline
+\caption{SATT coverage (nominal 0.95) and average estimated SE $(\sqrt{\hat{V}_E})$ for four variance
+estimators. Bimodal $\sigma_0$ design, $k=2$ adaptive matching, $\approx$996 replications.
+All \texttt{alt-tt} results include the $K/(K+1)$ bias correction.}
+\label{tab:bimodal-satt-coverage-v2}
+\begin{tabular}{llcccccccc}
+\toprule
+ & & \multicolumn{4}{c}{SATT coverage} & \multicolumn{4}{c}{Avg $\sqrt{\hat{V}_E}$} \\
+\cmidrule(lr){3-6}\cmidrule(lr){7-10}
+Scenario & Overlap & homo & het & alt-c & alt-tt & homo & het & alt-c & alt-tt \\
+\midrule
+\multirow{5}{*}{\shortstack[l]{1:\\$\sigma_1{=}\sigma_0$}}
+ & Very low & 0.904 & 0.910 & 0.910 & 0.916 & 1.136 & 1.179 & 1.179 & 1.201 \\
+ & Low & 0.921 & 0.925 & 0.925 & 0.932 & 0.983 & 1.025 & 1.025 & 1.041 \\
+ & Mid & 0.926 & 0.935 & 0.935 & 0.942 & 0.855 & 0.886 & 0.886 & 0.898 \\
+ & High & 0.920 & 0.933 & 0.933 & 0.940 & 0.762 & 0.784 & 0.784 & 0.795 \\
+ & Very high & 0.938 & 0.944 & 0.944 & 0.944 & 0.713 & 0.729 & 0.729 & 0.741 \\ 
+\midrule
+\multirow{5}{*}{\shortstack[l]{2:\\$\sigma_1{=}\sigma_0{+}2.0$}}
+ & Very low & 0.906 & 0.911 & 0.911 & 0.950 & 1.160 & 1.212 & 1.212 & 1.320 \\
+ & Low & 0.917 & 0.920 & 0.920 & 0.955 & 0.972 & 1.007 & 1.007 & 1.123 \\
+ & Mid & 0.910 & 0.924 & 0.924 & 0.964 & 0.847 & 0.875 & 0.875 & 1.003 \\
+ & High & 0.923 & 0.930 & 0.930 & 0.961 & 0.766 & 0.787 & 0.787 & 0.923 \\
+ & Very high & 0.930 & 0.933 & 0.933 & 0.973 & 0.708 & 0.726 & 0.726 & 0.870 \\ 
+\bottomrule
 \end{tabular}
-\label{tab:toy_var_pooled_vs_het-V_E}
-\caption{Performance of variance estimators under varying degrees of overlap. $\tilde{N}_C$ denotes the average effective sample size of the control group. True SE is the Monte Carlo standard deviation of $\hat{\tau}$ across 1000 simulations, and Est. SE is the average of the estimated standard errors. ``Homoskedastic'' pools residual variance across matched sets; ``Heteroskedastic'' applies the heteroskedasticity-consistent correction.}
 \end{table}
 
-Suggested sentence to add to the main-text discussion:
-\begin{quote}
-For the SATT-oriented variance estimators, performance is again generally good across overlap regimes, although coverage in the very low overlap case is somewhat less stable because the effective control sample size is smallest in that setting.
-\end{quote}
+\cmntM{What is the "5*" in the above table under scenario?}
+\xmeng{The 5 refers to the 5 different overlap settings (very low, low, medium, high, very high) shown as rows within each scenario block.}
 
-\subsection{Suggestion to add to appendix}
+Key findings:
+\begin{itemize}
+  \item \textbf{Scenario~1} ($\sigma_1=\sigma_0$): \texttt{het} and \texttt{alt-c} are numerically identical because both aggregate the same within-subclass control variances $s_t^2$.  All estimators yield near-nominal coverage; \texttt{het}/\texttt{alt-c} exceed \texttt{homo} by 1 percentage point at mid-to-high overlap, capturing the heteroskedastic covariance term $\operatorname{Cov}_p(w_j,s_j^2)\approx{+4.65}>0$.  The corrected \texttt{alt-tt} ($K/(K+1)=2/3$) is within 1 pp of \texttt{het}/\texttt{alt-c}.
 
-I (Xiang) also ran a fully adaptive one-nearest-neighbor design as an additional stress test for the variance estimators. This design can substantially reduce the effective control sample size in weak-overlap settings. I suggest reporting both the PATT-oriented and SATT-oriented tables in the appendix, and then adding a short discussion comparing them to the 5NN-adaptive results in the main text. See below.
+  \item \textbf{Scenario~2} ($\sigma_1=\sigma_0+2$): \texttt{homo}, \texttt{het}, and \texttt{alt-c} achieve coverage (0.906--0.933) essentially indistinguishable from Scenario~1---as expected, since $\hat\tau-\tau_{\mathrm{SATT}}=(n_T)^{-1}\sum_t[\varepsilon_{0t}-\sum_j w_{jt}\varepsilon_{0j}]$ and the $\varepsilon_1$ terms cancel, so the true SATT $V_E$ depends only on $\sigma_0$.  \texttt{alt-tt} over-covers substantially (0.950--0.973), with the gap widening as overlap increases.  \cmntM{Why would we expect overcoverage due to finite sample noise?  What are you saying here?}
+
+\xmeng{I am saying $K=2$ might have been too small, so the treated-to-treated match produces noisy local variance estimates that tend to slightly overestimate the SE on average, leading to mild overcoverage, but after a second thought, i think that's incorrect. The overcoverage issue might, instead, be on the control side because as the degree of overlap changes, treated distribution stays the same but control distribution varies. One explanation is in High and Very High, some $w_j$ could be really large, thus making the estimation of the covariance term somewhat not good. }
+\end{itemize}
+
+
+
+
+
+\newpage
+
+\section{***Old Stuff***}
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+
+
+
+
+
+\section{Extra stuff not yet used}
+
+
+\xmeng{Yes, it is a reasonable model. I am giving you an extra good news that $\hat{V}$ (Equation 1, 3) for PATT variance is always valid whether or not the common variance assumption ($\sigma_1(x) = \sigma_0(x)$) holds. Details in the ongoing update of the inference paper.}
+
+\cmntM{The above does seem like good news!  We should discuss.}
+
+
+\subsection{Relationship to the pooled estimator.}
+
+
+Under homoskedasticity, $\hat{V}_E^{\text{alt}}$ collapses to the existing $\hat{V}_E$.  More generally,
+\begin{equation}
+\label{eq:V_E^alt}
+    \hat{V}_E^{\text{alt}}
+  = \bar{S}^2\!\left(\frac{1}{n_T}+\frac{1}{\mathrm{ESS}(\mathcal{C})}\right)
+  + \frac{1}{n_T}\operatorname{Cov}_p(w_j,s_j^2),
+\end{equation}
+  
+where $\bar{S}^2$ is a pooled average of $s_j^2$ and $\operatorname{Cov}_p(w_j,s_j^2)$ is the weighted covariance between control weights and local variances.
+\cmntM{What is the subscript $p$ mean here?}
+\xmeng{The subscript $p$ stands for the random probability measure $p_j := w_j / n_T$. It's random in nature because $w_j$ depends on matching (if we condition on $X_0, X_1$ then it is not random). }
+When high-weight controls happen to sit in high-variance regions, $\operatorname{Cov}_p>0$ and $\hat{V}_E^{\text{alt}}>\hat{V}_E$; under homoskedasticity $\operatorname{Cov}_p=0$.
+
+
+
+\section{Suggestion to add to appendix}
+
+I (Xiang) also ran a fully adaptive one-nearest-neighbor design as an additional stress test for the variance estimators. 
+\cmntM{Which estimator is this?  This is the estimator we discuss in the paper: increase calipers to include at least one unit for all treated units?  Is this correct?}
+\xmeng{Yes.}
+This design can substantially reduce the effective control sample size in weak-overlap settings.
+I suggest reporting both the PATT-oriented and SATT-oriented tables in the appendix, and then adding a short discussion comparing them to the 5NN-adaptive results in the main text. See below.
 
 \paragraph{PATT table itself.}
 
@@ -277,6 +574,10 @@ I (Xiang) also ran a fully adaptive one-nearest-neighbor design as an additional
 \caption{Performance of population-variance estimators under the fully adaptive one-nearest-neighbor design. $\tilde{N}_C$ denotes the average effective sample size of the control group. True SE is the Monte Carlo standard deviation of $\hat{\tau}$ across 997 simulations, and Est. SE is the average estimated standard error. ``Homoskedastic'' pools residual variance across matched sets; ``Heteroskedastic'' applies the heteroskedasticity-consistent correction.}
 \label{tab:toy_var_pooled_vs_het_1nn}
 \end{table}
+
+\cmntM{Question: why is the number of simulation results not an even number? Are you dropping simulations where something is not defined? Please explain.}
+\xmeng{No, we are not dropping simulations. Some parallel jobs simply did not finish --- I suspect this is a cluster issue. Some days the jobs finish, but other days they will not. I have experienced this a few times. }
+
 
 \paragraph{SATT table itself.}
 
@@ -363,12 +664,18 @@ I also ran the fully adaptive $k=2$ design ($\approx 393$ iterations completed) 
 \paragraph{Comparison across $k = 1, 2, 5$: full results.}
 
 A direct comparison requires care because the same \texttt{deg\_overlap} label produces very different effective sample sizes across $k$ values.
-For $k=1$ and $k=2$, a small minimum $k$ produces a tight caliper in dense regions, so $\tilde{N}_C$ is small when controls are concentrated.
+For $k=1$ and $k=2$, a small minimum $k$ produces a tight caliper in dense regions, so $\tilde{N}_C$ is small when controls are concentrated. \cmntM{what do you mean ``for k=1, a small minimum k'' -- what is the minimum k, or are you saying k=1 or 2 is a small minimum k?}
+\xmeng{I mean $k$ itself is the minimum, i.e., how adaptive caliper is doing (in adaptive matching the caliper expands until at least $k$ controls are guaranteed per treated unit). }
 For $k=5$, the larger minimum forces a wider caliper, so $\tilde{N}_C$ is large in the same concentrated setting and \emph{smaller} when controls are spread uniformly.
 Concretely, the five DGP scenarios produce $\tilde{N}_C \approx 13, 21, 31, 43, 53$ for $k=1$ and $k=2$, but the \emph{opposite ordering} $\tilde{N}_C \approx 53, 44, 34, 25, 17$ for $k=5$.
+\cmntM{I am not understanding what is happening here.  Why the reversal?  Please explain?}
+\xmeng{This is my coding issue that in an old version i lable degree of overlap in the reverse order. You can ignore this. Basically we will label Table~\ref{tab:compare_k125} with degree of overlap text labels.}
 
-The fair comparison therefore aligns scenarios by similar $\tilde{N}_C$ rather than by label.
+The fair comparison therefore aligns scenarios by similar $\tilde{N}_C$ rather than by label. \cmntM{I am not following the logic here.  We want to know when the estimators succeed or fail, and i think you are saying the $k=5$ choice fails when there is HIGH overlap?}
+\xmeng{No. Same issue as the prior comment.}
+
 Table~\ref{tab:compare_k125} reports the heteroskedastic and pooled SATT $\hat{V}_E$ coverage for matched-$\tilde{N}_C$ rows.
+
 
 \begin{table}[hbt!]
 \centering
@@ -420,6 +727,7 @@ Two additional points may be worth noting in the appendix:
 % The fully adaptive 1NN design is more aggressive and can substantially reduce the effective control sample size in weak-overlap settings.
 % That, in turn, makes local residual-variance estimation more sensitive to noise.
 % By contrast, requiring a larger local donor count yields more stable variance estimation in finite samples without changing the asymptotic logic of the procedure.
+
 
 
 \bibliographystyle{apalike}

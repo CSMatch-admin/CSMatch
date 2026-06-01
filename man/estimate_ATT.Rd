@@ -9,6 +9,8 @@ estimate_ATT(
   outcome = "Y",
   treatment = "Z",
   superpopulation = FALSE,
+  homoskedastic = FALSE,
+  use_common_variance = TRUE,
   var_weight_type = "ess_units",
   variance_method = "pooled",
   boot_mtd = "wild",

@@ -10,6 +10,7 @@ get_finite_variance(
   outcome = "Y",
   treatment = "Z",
   use_common_variance = TRUE,
+  homoskedastic = FALSE,
   K = 1,
   covs = NULL,
   scaling = NULL,

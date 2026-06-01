@@ -28,6 +28,7 @@
 
 
 suppressPackageStartupMessages({
+  library(CSM)
   library(dplyr)
   library(tibble)
   library(tidyr)
