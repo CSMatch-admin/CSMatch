@@ -431,6 +431,91 @@ get_measurement_error_variance_OR17 <- function(matches,
 }
 
 
+#' OR17 bootstrap with simplified phi: phi_t = Y_t - tau_hat, phi_j = -omega_j * Y_j
+#' (raw outcomes rather than residuals vs matching-implied counterfactual)
+#'
+#' @param matches A CSM match object or matched data frame from result_table()
+#' @param outcome Name of outcome variable (default "Y")
+#' @param treatment Name of treatment variable (default "Z")
+#' @param B Number of bootstrap replications (default 250)
+#' @param seed_addition Seed offset for reproducibility (default 11)
+#' @return A tibble with V_E, SE, N_T, ESS_C, CI_lower, CI_upper
+#' @export
+get_measurement_error_variance_OR17_Y <- function(matches,
+                                                   outcome = "Y",
+                                                   treatment = "Z",
+                                                   B = 250,
+                                                   seed_addition = 11) {
+  if (is.csm_matches(matches)) {
+    matches <- result_table(matches)
+  }
+
+  treatment_sym <- rlang::sym(treatment)
+  outcome_sym   <- rlang::sym(outcome)
+
+  subclass_stats <- matches %>%
+    dplyr::group_by(subclass, !!treatment_sym) %>%
+    dplyr::summarize(mn_wY = sum(!!outcome_sym * weights), .groups = "drop") %>%
+    dplyr::group_by(subclass) %>%
+    dplyr::summarize(
+      hat_Y0 = dplyr::first(mn_wY),
+      Y_t    = dplyr::last(mn_wY),
+      D_t    = dplyr::last(mn_wY) - dplyr::first(mn_wY),
+      .groups = "drop"
+    )
+
+  N_T     <- nrow(subclass_stats)
+  att_hat <- mean(subclass_stats$D_t)
+
+  # phi_t = Y_t - tau_hat  (raw treated outcome, not matched difference)
+  phi_treated <- subclass_stats$Y_t - att_hat
+
+  # phi_j = -omega_j * Y_j  (raw control outcome times aggregate weight)
+  control_df <- matches %>%
+    dplyr::filter(!!treatment_sym == 0) %>%
+    dplyr::group_by(id) %>%
+    dplyr::summarize(
+      Y_j     = dplyr::first(!!outcome_sym),
+      omega_j = sum(weights),
+      .groups = "drop"
+    ) %>%
+    dplyr::mutate(phi_j = -omega_j * Y_j)
+
+  all_phi <- c(phi_treated, control_df$phi_j)
+  n_phi   <- length(all_phi)
+
+  # Mammen wild multipliers
+  T_star <- numeric(B)
+  p_up   <- (sqrt(5) - 1) / (2 * sqrt(5))
+  w_lo   <- -(sqrt(5) - 1) / 2
+  w_hi   <-  (sqrt(5) + 1) / 2
+
+  for (b in seq_len(B)) {
+    set.seed(123 + seed_addition + b * 13)
+    W_star    <- sample(c(w_lo, w_hi), prob = c(p_up, 1 - p_up),
+                        replace = TRUE, size = n_phi)
+    T_star[b] <- sum(all_phi * W_star) / N_T
+  }
+
+  SE  <- sd(T_star)
+  V_E <- SE^2
+
+  CI_lower <- att_hat - quantile(T_star, 0.975)
+  CI_upper <- att_hat - quantile(T_star, 0.025)
+
+  Ns <- calc_N_T_N_C(matches)
+
+  return(tibble::tibble(
+    V_E      = V_E,
+    SE       = SE,
+    N_T      = Ns$N_T,
+    ESS_C    = Ns$N_C_tilde,
+    CI_lower = CI_lower,
+    CI_upper = CI_upper
+  ))
+}
+
+
 #' Het bootstrap variance estimator for the ATT
 #'
 #' Wild bootstrap on the heteroskedastic variance components:
@@ -825,8 +910,20 @@ get_total_variance <- function(
     sigma_hat_squared <- NA_real_
     N_T               <- v_e_result$N_T
     ESS_C             <- v_e_result$ESS_C
+  } else if (variance_method == "or17_Y") {
+    v_e_result <- get_measurement_error_variance_OR17_Y(
+      matches       = matches_df,
+      outcome       = outcome,
+      treatment     = treatment,
+      B             = B,
+      seed_addition = seed_addition
+    )
+    V_E               <- v_e_result$V_E
+    sigma_hat_squared <- NA_real_
+    N_T               <- v_e_result$N_T
+    ESS_C             <- v_e_result$ESS_C
   } else {
-    stop("variance_method must be 'pooled', 'bootstrap', 'or17', 'pooled_het', 'ai06', or 'het_boot'")
+    stop("variance_method must be 'pooled', 'bootstrap', 'or17', 'pooled_het', 'ai06', 'het_boot', or 'or17_Y'")
   }
 
   # Calculate treatment effect estimate (tau_hat)
@@ -924,7 +1021,7 @@ get_total_variance <- function(
 
   # Calculate population heterogeneity variance (V_P)
   N_T_V_P <- V - N_T * V_E
-  if (variance_method %in% c("bootstrap", "or17", "het_boot")) {
+  if (variance_method %in% c("bootstrap", "or17", "het_boot", "or17_Y")) {
     V = N_T * V_E
     N_T_V_P = 0
   }
