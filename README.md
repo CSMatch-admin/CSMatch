@@ -3,7 +3,7 @@
 
 <!-- badges: end -->
 
-# Caliper Synthetic Matching (scmatch2)
+# Caliper Synthetic Matching (CSMatch)
 
 This package implements the Caliper Synthetic Matching approach, which
 is a blend of radius matching using distance metrics put on the
@@ -25,7 +25,7 @@ You can install the development version of CSM from
 [GitHub](https://github.com/) with:
 
     # install.packages("devtools")  # (if needed)
-    devtools::install_github("jche/scmatch2")
+    devtools::install_github("jche/CSMatch")
 
 # Quick demo of package
 
