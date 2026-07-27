@@ -6,7 +6,7 @@
 \usage{
 sensitivity_table(
   csm,
-  outcome = NULL,
+  outcome = "Y",
   feasible_only = FALSE,
   include_variances = FALSE,
   include_distances = TRUE

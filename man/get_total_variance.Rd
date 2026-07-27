@@ -9,7 +9,7 @@ get_total_variance(
   outcome = "Y",
   treatment = "Z",
   var_weight_type = "ess_units",
-  variance_method = "pooled",
+  variance_method = c("pooled", "pooled_het", "bootstrap", "ai06"),
   boot_mtd = "wild",
   B = 250,
   seed_addition = 11,
@@ -31,8 +31,10 @@ get_total_variance(
 "uniform": weight each cluster equally}
 
 \item{variance_method}{Method for calculating measurement error variance:
-"pooled": use get_measurement_error_variance (default)
-"bootstrap": use get_measurement_error_variance_OR}
+"pooled": use get_measurement_error_variance (default).
+"bootstrap": use get_measurement_error_variance_OR.
+"pooled_het": allow for heterogeneity.
+"ai06": the estimator of Abadie and Imbens.}
 
 \item{boot_mtd}{Bootstrap method when variance_method = "bootstrap" (default: "wild")}
 
