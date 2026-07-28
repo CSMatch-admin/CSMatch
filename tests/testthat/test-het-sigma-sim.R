@@ -127,7 +127,7 @@ test_that("sim_master_het runs and returns expected columns", {
     sigma1_extra  = 0,
     rad_method    = "adaptive",
     k_match       = 2,
-    est_method    = "scm",
+    est_method    = "csm",
     K_tt          = 1
   )
 
@@ -155,7 +155,7 @@ test_that("50-rep coverage: alt_tt covers SATT in scenario 1 & 2; homo does not"
         sigma1_extra  = sigma1_extra,
         rad_method    = "adaptive",
         k_match       = 2,
-        est_method    = "scm",
+        est_method    = "csm",
         K_tt          = 2
       ),
       error = function(e) NULL

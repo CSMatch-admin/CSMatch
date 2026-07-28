@@ -80,7 +80,7 @@ calada_scm <- lalonde_df_renamed %>%
                   metric = METRIC,
                   cal_method = CAL_METHOD,
                   dist_scaling = DIST_SCALING,
-                  est_method = "scm",
+                  est_method = "csm",
                   return = "sc_units",
                   #knn = 10,
                   num_bins = 5,

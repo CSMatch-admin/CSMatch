@@ -88,8 +88,8 @@ Each array element runs all four DGPs once (e.g., iterations 1–1000).
 Logs are written to:
 
 ```
-/homes2/<your_username>/scmatch2/logs/all_<jobid>_<arrayid>.out
-/homes2/<your_username>/scmatch2/logs/all_<jobid>_<arrayid>.err
+/homes2/<your_username>/CSMatch/logs/all_<jobid>_<arrayid>.out
+/homes2/<your_username>/CSMatch/logs/all_<jobid>_<arrayid>.err
 ```
 
 To monitor jobs:
@@ -101,7 +101,7 @@ squeue -u $USER
 To view a log:
 
 ```
-less /homes2/<your_username>/scmatch2/logs/all_<jobid>_1.out
+less /homes2/<your_username>/CSMatch/logs/all_<jobid>_1.out
 ```
 
 ---
@@ -151,14 +151,14 @@ Before running on your own system:
 1. **Edit path variables** inside scripts:  
    - In SLURM script (`run_slurm_all.sh`), update:
      ```
-     project_dir="/homes2/xmeng/scmatch2/"
+     project_dir="/homes2/xmeng/CSMatch/"
      ```
      → change to your own absolute project path.
 
    - In the SBATCH header, confirm log paths:
      ```
-     #SBATCH -o /homes2/xmeng/scmatch2/logs/all_%A_%a.out
-     #SBATCH -e /homes2/xmeng/scmatch2/logs/all_%A_%a.err
+     #SBATCH -o /homes2/xmeng/CSMatch/logs/all_%A_%a.out
+     #SBATCH -e /homes2/xmeng/CSMatch/logs/all_%A_%a.err
      ```
 
 2. Make sure the following directories exist (the scripts will create them if not):

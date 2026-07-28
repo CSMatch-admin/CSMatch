@@ -4,10 +4,10 @@
 \alias{impact_table}
 \title{Obtain impact table}
 \usage{
-impact_table(scm, outcome)
+impact_table(csm, outcome)
 }
 \arguments{
-\item{scm}{A csm_matches object from a matching call.}
+\item{csm}{A csm_matches object from a matching call.}
 
 \item{outcome}{Name of the outcome variable.}
 }

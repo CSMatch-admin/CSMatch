@@ -222,4 +222,4 @@ ferman-analysis/  →  (in-memory)                   →  figs/fig-*ferman* → 
 lalonde-analysis/ →  (in-memory)                   →  figs/ (OS)        →  figures/
 ```
 
-All scripts use `here::here()` for paths and assume the project root is the working directory (open `scmatch2.Rproj` in RStudio, or set working directory to the repo root before running).
+All scripts use `here::here()` for paths and assume the project root is the working directory (open `CSMatch.Rproj` in RStudio, or set working directory to the repo root before running).

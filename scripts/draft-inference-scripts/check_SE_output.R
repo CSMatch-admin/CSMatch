@@ -9,7 +9,7 @@ for (i in seq_along(n_t_values)) {
   for (j in seq_along(beta_c_values)) {
     n_t <- n_t_values[i]
 
-    # Adjust SE estimates for Boot SE (Sign, Uniform Weight) and Boot SE (Sign, SCM Weight)
+    # Adjust SE estimates for Boot SE (Sign, Uniform Weight) and Boot SE (Sign, CSM Weight)
     for (k in c(3, 4)) {
       adjusted_se_estimates[i, j, , k] <- se_estimates[i, j, , k] / sqrt(n_t)
     }
@@ -42,9 +42,9 @@ estimator_names <- c(
   "True CMSE",
   "AE SE",
   "Boot SE (Sign, Uniform Weight)",
-  "Boot SE (Sign, SCM Weight)",
+  "Boot SE (Sign, CSM Weight)",
   "Boot SE (Wild, Uniform Weight)",
-  "Boot SE (Wild, SCM Weight)"
+  "Boot SE (Wild, CSM Weight)"
 )
 
 # Change the column names to "High Overlap," "Mid Overlap," and "Low Overlap"

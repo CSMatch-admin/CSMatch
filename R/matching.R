@@ -155,8 +155,8 @@ set_NA_to_unmatched_co <- function(dm_uncapped, radius_sizes){
 #'
 #' @param est_method How to weight control units:
 #'   \itemize{
-#'     \item "scm": synthetic control weights
-#'     \item "scm_extrap": SCM with extrapolation
+#'     \item "csm": synthetic control weights
+#'     \item "csm_extrap": CSM with extrapolation
 #'     \item "average": simple average
 #'   }
 #'
@@ -191,7 +191,7 @@ set_NA_to_unmatched_co <- function(dm_uncapped, radius_sizes){
 #' @export
 #'
 #' @examples
-#' data <- CSM:::gen_one_toy()
+#' data <- CSMatch:::gen_one_toy()
 #' mtch <- gen_matches(data, covs = c("X1", "X2"), treatment = "Z")
 #' names( mtch )
 gen_matches <- function( data,
@@ -305,9 +305,9 @@ gen_matches <- function( data,
 #' @param matched_gps Either a csm_matches object or a list of matched
 #'   sets, with a tx unit in first row of each set.
 #' @param covs List of covariates to calculate similarity scores on if
-#'   using scm.
+#'   using csm.
 #' @param scaling tibble with scaling for each covariate
-#' @param est_method "scm" or "average"
+#' @param est_method "csm" or "average"
 #'
 #' @return If passed an csm object, an updated csm object with
 #'   weights. Otherwise, return list of matched sets, with 'weights'
@@ -315,7 +315,7 @@ gen_matches <- function( data,
 #'
 #' @export
 est_weights <- function( matched_gps,
-                         est_method = c("scm", "average"),
+                         est_method = c("csm", "average"),
                          covs = params(matched_gps)$covariates,
                          treatment = params(matched_gps)$treatment,
                          scaling = params(matched_gps)$scaling,
@@ -330,8 +330,8 @@ est_weights <- function( matched_gps,
     matches = matched_gps$matches
   }
 
-  if (est_method == "scm") {
-    # generate SCM matching formula
+  if (est_method == "csm") {
+    # generate CSM matching formula
     #  - NOTE: non-numeric columns crashed augsynth for some reason,
     #          so I still don't mess with them here.
     match_cols <- covs
@@ -340,7 +340,7 @@ est_weights <- function( matched_gps,
                       ~gen_sc_weights(.x, match_cols,
                                       scaling,
                                       metric),
-                      .progress="Producing SCM units...")
+                      .progress="Producing CSM units...")
     # needs to modify gen_sc_weights to get clear:
     #   a) what type of matched_gps is required
     #   b) whether match_cols can be ignored

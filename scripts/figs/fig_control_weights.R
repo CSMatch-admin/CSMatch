@@ -55,7 +55,7 @@ mtch <- get_cal_matches(
   scaling    = scaling,
   k          = 5,
   warn       = FALSE,
-  est_method = "scm"
+  est_method = "csm"
 )
 
 # ---- Extract total control weight w_j per control unit -----------------
@@ -208,7 +208,7 @@ make_het_panels <- function(sigma1_extra, seed_val = 42, scenario_label = "") {
     scaling    = scaling_h,
     k          = 2,
     warn       = FALSE,
-    est_method = "scm"
+    est_method = "csm"
   )
 
   co_weights_h <- result_table(mtch_h, return = "agg_co_units") %>%

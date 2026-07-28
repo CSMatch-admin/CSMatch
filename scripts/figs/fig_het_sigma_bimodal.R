@@ -67,7 +67,7 @@ make_wj_sj_panels <- function(df, scaling, sigma1_extra = 0,
     scaling    = scaling,
     k          = 2,
     warn       = FALSE,
-    est_method = "scm"
+    est_method = "csm"
   )
 
   co_wts <- result_table(mtch, return = "agg_co_units") %>% filter(Z == 0)

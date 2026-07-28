@@ -100,7 +100,7 @@ mtch <- tryCatch(
     rad_method = "adaptive",
     caliper = 0.2,
     # choose estimator consistent with your pipeline
-    est_method = "scm",
+    est_method = "csm",
     k = 5,
     warn = FALSE
   ),

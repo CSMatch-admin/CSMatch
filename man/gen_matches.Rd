@@ -58,8 +58,8 @@ applied but distances are not recomputed.}
 
 \item{est_method}{How to weight control units:
 \itemize{
-\item "scm": synthetic control weights
-\item "scm_extrap": SCM with extrapolation
+\item "csm": synthetic control weights
+\item "csm_extrap": CSM with extrapolation
 \item "average": simple average
 }}
 }
@@ -84,7 +84,7 @@ Generally use the \code{get_cal_matches()} function instead, which
 wraps this.
 }
 \examples{
-data <- CSM:::gen_one_toy()
+data <- CSMatch:::gen_one_toy()
 mtch <- gen_matches(data, covs = c("X1", "X2"), treatment = "Z")
 names( mtch )
 }

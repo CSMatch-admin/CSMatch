@@ -7,7 +7,7 @@
 #SBATCH -t 02:00:00
 #SBATCH --array=1-1000
 
-project_dir="/homes2/xmeng/scmatch2"
+project_dir="/homes2/xmeng/CSMatch"
 r_script_path="${project_dir}/scripts/sims-variance/1_parallel_sim_inference.R"
 
 module load R/4.3.2

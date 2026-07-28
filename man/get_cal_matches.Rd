@@ -12,7 +12,7 @@ get_cal_matches(
   metric = c("maximum", "euclidean", "manhattan"),
   caliper = 1,
   rad_method = c("adaptive", "fixed", "1nn", "knn", "knn-capped"),
-  est_method = c("scm", "scm_extrap", "average"),
+  est_method = c("csm", "csm_extrap", "average"),
   scaling = NULL,
   id_name = "id",
   warn = TRUE,
@@ -53,8 +53,8 @@ matches. Often 1. Scaling usually handles covariate importance.}
 
 \item{est_method}{How to weight control units:
 \itemize{
-\item "scm": synthetic control weights
-\item "scm_extrap": SCM with extrapolation
+\item "csm": synthetic control weights
+\item "csm_extrap": CSM with extrapolation
 \item "average": simple average
 }}
 
@@ -106,7 +106,7 @@ mtch <- get_cal_matches(dat,
                         scaling = c(1/0.2, 1/0.2),
                         caliper = 1,
                         rad_method = "adaptive",
-                        est_method = "scm")
+                        est_method = "csm")
 
 # View matching results
 mtch

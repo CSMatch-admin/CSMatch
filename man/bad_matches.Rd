@@ -12,7 +12,7 @@ bad_matches(csm, threshold, nonzero_weight_only = TRUE)
 \item{threshold}{Distance threshold for bad matches}
 
 \item{nonzero_weight_only}{TRUE means drop any control units with 0
-weight (e.g., due to scm weighting)}
+weight (e.g., due to csm weighting)}
 }
 \value{
 Dataframe of bad matches

@@ -4,10 +4,10 @@
 \alias{impact_curve}
 \title{Impact curve plot}
 \usage{
-impact_curve(scm, outcome, min_dist = TRUE, jitter = FALSE)
+impact_curve(csm, outcome, min_dist = TRUE, jitter = FALSE)
 }
 \arguments{
-\item{scm}{A csm_matches object}
+\item{csm}{A csm_matches object}
 
 \item{outcome}{The name of the outcome variable to plot.}
 }

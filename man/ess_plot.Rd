@@ -9,7 +9,7 @@ ess_plot(csm, feasible_only = FALSE)
 \arguments{
 \item{d}{Data frame of matched units including columns for Z
 (treatment indicator), subclass (matched set identifier), dist
-(distance from treated unit), and weights (SCM weights).  E.g., the results from the}
+(distance from treated unit), and weights (CSM weights).  E.g., the results from the}
 }
 \description{
 Plot the effective sample size (ESS) of the treated units, and

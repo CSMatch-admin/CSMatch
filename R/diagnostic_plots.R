@@ -25,11 +25,11 @@ create_toy_df_plot <- function(toy_df) {
 #' Plot distribution of distances between treated units and their
 #' kth-nearest neighbors in the control group, for a set of k values.
 #'
-#' @param scm A csm_matches object
+#' @param csm A csm_matches object
 #' @param tops A vector of integers indicating which nearest neighbors
 #'   to plot
 #' @param caliper Optional caliper value to plot as a vertical line.
-#'   Otherwise it will take caliper from scm object.  If NA will plot
+#'   Otherwise it will take caliper from csm object.  If NA will plot
 #'   no line.
 #' @param target_percentile Optional target percentile for caliper,
 #'   which will calculate caliper to achieve.
@@ -41,14 +41,14 @@ create_toy_df_plot <- function(toy_df) {
 #'   caliper value used.
 #'
 #' @export
-caliper_distance_plot <- function( scm, tops = 1:3, caliper = NULL,
+caliper_distance_plot <- function( csm, tops = 1:3, caliper = NULL,
                                    target_percentile = NULL,
                                    target_k = 1 ) {
 
   tops = sort(tops)
 
   # Extract distance matrix from slot
-  dist_matrix <- data.frame(t(as.matrix(scm$dm_uncapped)))
+  dist_matrix <- data.frame(t(as.matrix(csm$dm_uncapped)))
   dm_col_sorted <- apply(dist_matrix, 2, sort)
 
   # Updated plotting function to show the "hard to match" units
@@ -96,7 +96,7 @@ caliper_distance_plot <- function( scm, tops = 1:3, caliper = NULL,
   attr( plt, "distances" ) <- dists
 
   if ( is.null( caliper ) ) {
-    caliper = params(scm)$caliper
+    caliper = params(csm)$caliper
   }
 
   if ( !is.null( caliper ) && !is.na( caliper) ) {
@@ -135,7 +135,7 @@ caliper_distance_plot <- function( scm, tops = 1:3, caliper = NULL,
 #' Look at distances between each treated unit and their synthetic
 #' control, average control, and closest control.
 #'
-#' @param scm A csm_matches object
+#' @param csm A csm_matches object
 #' @param long_table If TRUE, return a long-form table with method and
 #'   distance columns.  If FALSE each tx unit is a row.
 #'
@@ -143,23 +143,23 @@ caliper_distance_plot <- function( scm, tops = 1:3, caliper = NULL,
 #'   synthetic control, average control, and closest control.
 #'
 #' @export
-get_distance_table <- function( scm,
+get_distance_table <- function( csm,
                                 long_table = FALSE ) {
-  d = result_table(scm)
-  scaling = params(scm)$scaling
-  metric = params(scm)$metric
-  covariates = params(scm)$covariates
-  treatment = params(scm)$treatment
-  outcome = params(scm)$outcome
+  d = result_table(csm)
+  scaling = params(csm)$scaling
+  metric = params(csm)$metric
+  covariates = params(csm)$covariates
+  treatment = params(csm)$treatment
+  outcome = params(csm)$outcome
 
-  if ( is.null( scm$treatment_table ) ) {
-    scm$treatment_table <- make_treatment_table(scm)
+  if ( is.null( csm$treatment_table ) ) {
+    csm$treatment_table <- make_treatment_table(csm)
   }
 
   # check distances bw each tx/sc pair
-  sc_dists <- scm %>%
+  sc_dists <- csm %>%
     agg_sc_units()
-  stopifnot( all( sc_dists$id[sc_dists[[treatment]]==1] == scm$treatment_table$id) )
+  stopifnot( all( sc_dists$id[sc_dists[[treatment]]==1] == csm$treatment_table$id) )
   sc_dists <- sc_dists %>%
     gen_dm(scaling = scaling,
            covs = covariates,
@@ -167,9 +167,9 @@ get_distance_table <- function( scm,
            metric = metric) %>%
     diag()
 
-  avg_dists <- scm %>%
+  avg_dists <- csm %>%
     agg_avg_units()
-  stopifnot( all( avg_dists$id[avg_dists[[treatment]]==1] == scm$treatment_table$id) )
+  stopifnot( all( avg_dists$id[avg_dists[[treatment]]==1] == csm$treatment_table$id) )
 
   avg_dists <- avg_dists %>%
     gen_dm(scaling = scaling,
@@ -178,7 +178,7 @@ get_distance_table <- function( scm,
            metric = metric) %>%
     diag()
 
-  nn_dists <- scm %>%
+  nn_dists <- csm %>%
     result_table() %>%
     group_by( .data[[treatment]], ,subclass) %>%
     filter(dist == min(dist)) %>%
@@ -187,7 +187,7 @@ get_distance_table <- function( scm,
     agg_avg_units( covariates = covariates,
                    treatment = treatment,
                    outcome = outcome )
-  stopifnot( all( nn_dists$id[nn_dists[[treatment]]==1] == scm$treatment_table$id) )
+  stopifnot( all( nn_dists$id[nn_dists[[treatment]]==1] == csm$treatment_table$id) )
   nn_dists <- nn_dists %>%
     gen_dm(scaling = scaling,
            covs = covariates,
@@ -196,21 +196,21 @@ get_distance_table <- function( scm,
     diag()
 
   res_list <- list(sc = sc_dists, avg = avg_dists, nn = nn_dists)
-  dist_table <- tibble(id = scm$treatment_table$id,
-                       SCM = sc_dists,
+  dist_table <- tibble(id = csm$treatment_table$id,
+                       CSM = sc_dists,
                        average = avg_dists,
                        closest = nn_dists)
 
   dist_table <- dist_table %>%
-    left_join( scm$treatment_table %>%
+    left_join( csm$treatment_table %>%
                  dplyr::select( id, feasible, matched ),
                by="id" )
 
   if ( long_table ) {
     dist_table <- dist_table %>%
-      pivot_longer( c( `SCM`, `average`, `closest` ),
+      pivot_longer( c( `CSM`, `average`, `closest` ),
                     names_to = "method", values_to="distance" ) %>%
-      mutate(method = factor( method, levels = c( "SCM", "average", "closest" ) ) )
+      mutate(method = factor( method, levels = c( "CSM", "average", "closest" ) ) )
   }
 
 
@@ -218,7 +218,7 @@ get_distance_table <- function( scm,
 }
 
 
-# SCM evaluation plot -----------------------------------------------------
+# CSM evaluation plot -----------------------------------------------------
 
 #' Calculate distances from treated units to their controls
 #'
@@ -226,7 +226,7 @@ get_distance_table <- function( scm,
 #' Look at distribution of pairwise distances between treated unit and
 #' their synthetic control, average control, and 1-NN control.
 #'
-#' @param scm A csm_matches object
+#' @param csm A csm_matches object
 #' @param feasible_only If TRUE, only plot distances for treated units
 #'   that were feasible and matched.
 #' @param boxplot_style If TRUE, use boxplot style for the density
@@ -237,16 +237,16 @@ get_distance_table <- function( scm,
 #'   and "dist_table" with the full table of distances.
 #'
 #' @export
-distance_density_plot <- function(scm, feasible_only = FALSE, boxplot_style = TRUE ) {
+distance_density_plot <- function(csm, feasible_only = FALSE, boxplot_style = TRUE ) {
 
-  dist_table <- get_distance_table( scm, long_table = TRUE )
+  dist_table <- get_distance_table( csm, long_table = TRUE )
 
   # rename method factor level closest to 1-NN
   dist_table <- dist_table %>%
     mutate( method = recode( method,
                              closest = "1-NN",
                              average = "Average",
-                             SCM = "SCM" ) )
+                             CSM = "CSM" ) )
 
   dd <- if ( feasible_only ) {
     dist_table %>%
@@ -294,11 +294,11 @@ distance_density_plot <- function(scm, feasible_only = FALSE, boxplot_style = TR
 #' versus the distance between each treated unit and the simple average control.
 #'
 #' @noRd
-scm_vs_avg_distance_plot <- function(scm) {
+scm_vs_avg_distance_plot <- function(csm) {
 
-  d = result_table(scm)
-  scaling = params(scm)$scaling
-  metric = params(scm)$metric
+  d = result_table(csm)
+  scaling = params(csm)$scaling
+  metric = params(csm)$metric
 
   # check distances bw each tx/sc pair
   sc_dists <- d %>%
@@ -354,17 +354,17 @@ scm_vs_avg_distance_plot <- function(scm) {
 
 # estimate-estimand tradeoff plot -----------------------------------------
 
-satt_plot <- function(scm, B=NA) {
+satt_plot <- function(csm, B=NA) {
 
-  feasible_subclasses <- feasible_unit_subclass(scm)
+  feasible_subclasses <- feasible_unit_subclass(csm)
 
   n_feasible <- length(feasible_subclasses)
 
-  res = result_table(scm)
+  res = result_table(csm)
   ggd_maxcal <- res %>%
     filter(!subclass %in% feasible_subclasses) %>%
     filter(Z==1) %>%
-    left_join( caliper_table(scm), by="id") %>%
+    left_join( caliper_table(csm), by="id") %>%
     arrange(adacal) %>%
     mutate(order = 1:n() + n_feasible)
 
@@ -378,7 +378,7 @@ satt_plot <- function(scm, B=NA) {
 
   # ATT estimate vs. # co units added
   ggd_att <- res %>%
-    left_join(caliper_table(scm), by="id") %>%
+    left_join(caliper_table(csm), by="id") %>%
     group_by(subclass) %>%
     summarize(adacal = last(adacal),
               tx = Y[2] - Y[1]) %>%
@@ -817,19 +817,19 @@ love_plot2 <- function(res, covs, B=NA) {
 #' Plot the relationship between maximum distance in matched set and
 #' the outcome difference within matched sets.
 #'
-#' @param scm A csm_matches object
+#' @param csm A csm_matches object
 #' @param outcome The name of the outcome variable to plot.
 #'
 #' @return A ggplot object showing the impact curve. Also has an
 #'   attribute "table" with the underlying data used to create the
 #'   plot.
 #' @export
-impact_curve <- function( scm, outcome, min_dist = TRUE, jitter = FALSE ) {
+impact_curve <- function( csm, outcome, min_dist = TRUE, jitter = FALSE ) {
 
-  if ( is.csm_matches( scm ) ) {
-    rsb = impact_table( scm=scm, outcome=outcome )
+  if ( is.csm_matches( csm ) ) {
+    rsb = impact_table( csm=csm, outcome=outcome )
   } else {
-    rsb = scm
+    rsb = csm
   }
 
   ATT = mean( rsb$outcome )

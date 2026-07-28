@@ -33,13 +33,13 @@ test_that("get_cal_matches works well", {
     data.frame(Z=c(1,0,0,0,1),
                X=c(0,0.5,0.8,3,1.6) )
   test_df
-  res <- CSM:::get_cal_matches(data = test_df,
+  res <- CSMatch:::get_cal_matches(data = test_df,
                                covs = "X",
                                treatment = "Z",
                                metric = "maximum",
                                caliper = 1,
                                rad_method = "adaptive",
-                               est_method = "scm",
+                               est_method = "csm",
                                scaling = 1)
   res$matches
   expect_equal( nrow( result_table(res) ), 5 )
@@ -57,13 +57,13 @@ test_that("get_cal_matches works well", {
   test_df = bind_rows( test_df, test_df2 )
   test_df
 
-  res <- CSM:::get_cal_matches(data = test_df,
+  res <- CSMatch:::get_cal_matches(data = test_df,
                                covs = c( "X1", "X2" ),
                                treatment = "Z",
                                metric = "maximum",
                                caliper = 1,
                                rad_method = "adaptive",
-                               est_method = "scm",
+                               est_method = "csm",
                                scaling = c( 1, 5 ) )
   res$matches
   result_table( res, "agg" )
@@ -74,13 +74,13 @@ test_that("get_cal_matches works well", {
   expect_equal( nrow( result_table(res, "sc") ), 4 )
 
 
-  res <- CSM:::get_cal_matches(data = test_df,
+  res <- CSMatch:::get_cal_matches(data = test_df,
                                covs = c( "X1", "X2" ),
                                treatment = "Z",
                                metric = "maximum",
                                caliper = 1,
                                rad_method = "adaptive",
-                               est_method = "scm",
+                               est_method = "csm",
                                scaling = c( 1, 5 ) )
   res$matches
   expect_equal( nrow( result_table( res ) ), 5 )
@@ -131,13 +131,13 @@ test_that("id and subclass ID make sense", {
     relocate( ID )
 
 
-  res <- CSM:::get_cal_matches(data = test_df,
+  res <- CSMatch:::get_cal_matches(data = test_df,
                                covs = c( "X1", "X2" ),
                                treatment = "Z",
                                metric = "maximum",
                                caliper = 1,
                                rad_method = "adaptive",
-                               est_method = "scm",
+                               est_method = "csm",
                                scaling = 1)
   res$treatment_table
   # Expect subclass all starts with U in treatment table:
@@ -236,9 +236,9 @@ test_that("adaptive matching gets right units", {
 
   dt <- get_distance_table( scmatches )
   dt
-  expect_true( all( dt$SCM <= dt$closest ) )
+  expect_true( all( dt$CSM <= dt$closest ) )
   expect_true( all( dt$closest <= dt$average ) )
 
-  expect_equal( dt$SCM,
+  expect_equal( dt$CSM,
                 c( 0.1, 0.2, 0.05, 0, 0 ) )
 })

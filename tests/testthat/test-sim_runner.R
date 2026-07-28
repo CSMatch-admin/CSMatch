@@ -86,7 +86,7 @@ test_that("run_all_methods returns correct tibble structure (fast methods)", {
   skip_if_not_installed("optweight")
 
   set.seed(42)
-  df <- CSM:::gen_one_toy(nc = 80, nt = 25, f0_sd = 0.5)
+  df <- CSMatch:::gen_one_toy(nc = 80, nt = 25, f0_sd = 0.5)
   form   <- Z ~ X1 + X2
   nbins  <- 6
   covs   <- parse_form(form)$covs
@@ -136,7 +136,7 @@ test_that("run_all_methods accepts method group shorthands via selected_methods"
   skip_if_not_installed("optweight")
 
   set.seed(7)
-  df <- CSM:::gen_one_toy(nc = 60, nt = 20, f0_sd = 0.5)
+  df <- CSMatch:::gen_one_toy(nc = 60, nt = 20, f0_sd = 0.5)
   form  <- Z ~ X1 + X2
   nbins <- 6
   covs  <- parse_form(form)$covs

@@ -8,7 +8,7 @@ get_att_csm <- function(df,
                         metric = c("maximum", "euclidean", "manhattan"),
                         caliper = 1,
                         rad_method = c("adaptive", "fixed", "1nn"),
-                        est_method = c("scm", "scm_extrap", "average"),
+                        est_method = c("csm", "csm_extrap", "average"),
                         return = c("sc_units", "agg_co_units", "all"),
                         dist_scaling = df %>%
                           summarize(across(starts_with("X"),

@@ -140,7 +140,7 @@ toy_match_infer <- function(
     nbins = 6,
     rad_method = "adaptive",
     k_match = 5,
-    est_method = "scm",
+    est_method = "csm",
     include_bootstrap = TRUE,
     boot_mtd = "wild",
     B = 250,
@@ -364,7 +364,7 @@ toy_match_infer <- function(
 
 sim_master <- function(
     iteration, N = 600, overlap_label, error_label = "homoskedastic",
-    rad_method = "adaptive", k_match = 5, est_method = "scm",
+    rad_method = "adaptive", k_match = 5, est_method = "csm",
     k_dim = 2, grid_id = 1, ...
 ) {
   prop_nc_unif_values <- c(

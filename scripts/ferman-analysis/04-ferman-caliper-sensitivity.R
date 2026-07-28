@@ -86,7 +86,7 @@ run_one_spec <- function(mult_y2007, mult_y2008, mult_y2009, cal_sp,
         metric     = "maximum",
         rad_method = "adaptive",
         scaling    = sc,
-        est_method = "scm"
+        est_method = "csm"
       ),
     error = function(e) {
       message("spec ", spec_id, " (", label, "): matching failed — ", conditionMessage(e))

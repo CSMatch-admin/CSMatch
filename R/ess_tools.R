@@ -14,7 +14,7 @@
 #'
 #' @param d Data frame of matched units including columns for Z
 #'   (treatment indicator), subclass (matched set identifier), dist
-#'   (distance from treated unit), and weights (SCM weights).  E.g., the results from the
+#'   (distance from treated unit), and weights (CSM weights).  E.g., the results from the
 #'
 #' @export
 ess_plot <- function(csm, feasible_only = FALSE) {
@@ -55,7 +55,7 @@ ess_plot <- function(csm, feasible_only = FALSE) {
                                  wesanderson::wes_palette("Zissou1", 5)[c(5,4,1)])) +
     scale_x_discrete(labels = c("Control units \n(1-NN weights)",
                                 "Control units \n(Average weights)",
-                                "Control units \n(SCM weights)",
+                                "Control units \n(CSM weights)",
                                 "Treated units")) +
     theme_classic() +
     guides(fill="none") +

@@ -21,7 +21,7 @@ test_that("basic object functionality", {
                           scaling = c(1/0.2, 1/0.2),
                           caliper = 0.25,
                           rad_method = "adaptive",
-                          est_method = "scm")
+                          est_method = "csm")
 
   # View matching results
   mtch
@@ -106,14 +106,14 @@ test_that("basic object functionality", {
                             scaling = c(1/0.2, 1/0.2),
                             caliper = 0.05,
                             rad_method = "fixed",
-                            est_method = "scm")
+                            est_method = "csm")
   )
   expect_output(
     summary( mtch ),
     "0 treated units matched to 0 of 500 control units"
   )
 
-  tt = CSM:::unmatched_units(mtch)
+  tt = CSMatch:::unmatched_units(mtch)
   expect_equal( nrow(tt), 5 )
 
 
@@ -131,7 +131,7 @@ test_that("result_table schemas are consistent across return modes", {
                           scaling = c(1/0.2, 1/0.2),
                           caliper = 0.25,
                           rad_method = "adaptive",
-                          est_method = "scm")
+                          est_method = "csm")
 
   # all table should contain outcome columns from matches
   rt_all <- result_table(mtch, return = "all")

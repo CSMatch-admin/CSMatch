@@ -1,10 +1,10 @@
 # scripts/debug_distances_kang.R
 #
 # Compare covariate distances from each treated unit to its matched controls
-# under CSM (adaptive caliper + SCM weights) vs. CEM, on the Kang DGP.
+# under CSM (adaptive caliper + CSM weights) vs. CEM, on the Kang DGP.
 #
 # For CSM: uses get_distance_table(csm, long_table = FALSE) which returns the
-#   SCM-weighted, equally-weighted, and closest-neighbour distances per tx unit.
+#   CSM-weighted, equally-weighted, and closest-neighbour distances per tx unit.
 #
 # For CEM: calc_distances_for_CEM() (defined below) mirrors get_distance_table's
 #   logic: for each treated unit it computes the average covariate distance to
@@ -46,7 +46,7 @@ cat("\n")
 
 
 # ── 3. Run CSM ───────────────────────────────────────────────────────────────
-cat("── Running CSM (adaptive, k=2, scm) ──\n")
+cat("── Running CSM (adaptive, k=2, csm) ──\n")
 csm <- get_cal_matches(
   data       = df,
   formula    = form,
@@ -54,7 +54,7 @@ csm <- get_cal_matches(
   scaling    = dist_scaling,
   rad_method = "adaptive",
   k          = 2,
-  est_method = "scm",
+  est_method = "csm",
   warn       = FALSE
 )
 
@@ -80,7 +80,7 @@ cat(sprintf("CEM: %d treated and %d controls retained (of %d tx, %d co)\n\n",
 
 
 # ── 5. CSM distance table ────────────────────────────────────────────────────
-# Returns one row per treated unit with columns: id, SCM, average, closest
+# Returns one row per treated unit with columns: id, CSM, average, closest
 cat("── CSM distance table (get_distance_table) ──\n")
 csm_dists <- get_distance_table(csm, long_table = FALSE)
 cat("CSM distances (first 10 rows):\n")
@@ -177,10 +177,10 @@ cat(sprintf("%-12s  %8.4f  %8.4f  %8d\n", "CSM (avg)",
             mean(csm_dists$average,   na.rm = TRUE),
             median(csm_dists$average, na.rm = TRUE),
             sum(!is.na(csm_dists$average))))
-cat(sprintf("%-12s  %8.4f  %8.4f  %8d\n", "CSM (SCM)",
-            mean(csm_dists$SCM,   na.rm = TRUE),
-            median(csm_dists$SCM, na.rm = TRUE),
-            sum(!is.na(csm_dists$SCM))))
+cat(sprintf("%-12s  %8.4f  %8.4f  %8d\n", "CSM (CSM)",
+            mean(csm_dists$CSM,   na.rm = TRUE),
+            median(csm_dists$CSM, na.rm = TRUE),
+            sum(!is.na(csm_dists$CSM))))
 cat(sprintf("%-12s  %8.4f  %8.4f  %8d\n", "CEM (avg)",
             mean(cem_dists$avg_dist,   na.rm = TRUE),
             median(cem_dists$avg_dist, na.rm = TRUE),
@@ -192,7 +192,7 @@ plot_df <- bind_rows(
   csm_dists %>%
     transmute(id, dist = average, method = "CSM (avg)"),
   csm_dists %>%
-    transmute(id, dist = SCM,     method = "CSM (SCM)"),
+    transmute(id, dist = CSM,     method = "CSM (CSM)"),
   cem_dists %>%
     transmute(id, dist = avg_dist, method = "CEM (avg)")
 )

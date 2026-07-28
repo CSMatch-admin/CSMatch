@@ -40,7 +40,7 @@ lalonde_scm <- lalonde_df %>%
     metric = METRIC,
     rad_method = CAL_METHOD,
     scaling = DIST_SCALING,
-    est_method = "scm"
+    est_method = "csm"
   )
 
 lalonde_scm

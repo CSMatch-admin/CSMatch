@@ -4,7 +4,7 @@ source(here::here("scripts/lib/wrappers.R"))
 ## Make some data to test on ----
 
 set.seed(42)
-df <- CSM:::gen_one_toy(nc = 80, nt = 25, f0_sd = 0.5)
+df <- CSMatch:::gen_one_toy(nc = 80, nt = 25, f0_sd = 0.5)
 form   <- Z ~ X1 + X2
 nbins  <- 6
 covs   <- parse_form(form)$covs
@@ -47,14 +47,14 @@ test_that("get_att_point_est works", {
   dat <- data.frame(Z = c(1,0,0,0,1),
                     Y = c(1,-1,1,0,1),
                     weights = c(1,0.5,0.5,1,1))
-  atts <- CSM:::get_att_point_est(dat)
+  atts <- CSMatch:::get_att_point_est(dat)
   expect_equal(atts, 1)
 })
 
 
 test_that("cem returns numeric", {
-  df <- CSM:::gen_one_toy()
-  cem <- get_att_cem(df, num_bins = 5, est_method = "scm")
+  df <- CSMatch:::gen_one_toy()
+  cem <- get_att_cem(df, num_bins = 5, est_method = "csm")
   expect_true(is.numeric(cem))
 })
 
@@ -63,7 +63,7 @@ test_that("get_cem_matches average weights: treated unit gets 1, controls share 
   # Regression test for bug where treatment=NULL caused all units in a subclass
   # to get weight 1/n_total instead of treated=1, controls=1/n_controls.
   set.seed(42)
-  df <- CSM:::gen_one_toy(nc = 80, nt = 25, f0_sd = 0.5)
+  df <- CSMatch:::gen_one_toy(nc = 80, nt = 25, f0_sd = 0.5)
 
   res_all <- get_cem_matches(data = df, num_bins = 6, est_method = "average",
                              return = "all", warn = FALSE)
@@ -125,7 +125,7 @@ test_that("tmle2 and aipw2 complete on toy (slow)", {
   skip_if_not_installed("AIPW")
 
   set.seed(42)
-  df <- CSM:::gen_one_toy(nc = 120, nt = 40, f0_sd = 0.2)  # keep small
+  df <- CSMatch:::gen_one_toy(nc = 120, nt = 40, f0_sd = 0.2)  # keep small
 
   # These call heavier SL libraries internally; keep dataset tiny
   tmle2 <- get_att_tmle(df, form = Z ~ X1 + X2,
@@ -142,7 +142,7 @@ test_that("twang returns numeric for hainmueller (slow)", {
   skip_if_not_installed("twang")
 
   set.seed(123)
-  df <- CSM:::gen_df_hain(nc = 200, nt = 40, sigma_e = "n100", outcome = "nl2", sigma_y = 1, ATE = 0)
+  df <- CSMatch:::gen_df_hain(nc = 200, nt = 40, sigma_e = "n100", outcome = "nl2", sigma_y = 1, ATE = 0)
   est <- get_att_twang(df, form = as.formula("Z ~ X1+X2+X3+X4+X5+X6"))
   expect_true(is.numeric(est) && length(est) == 1)
   expect_false(is.na(est))

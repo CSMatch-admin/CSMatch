@@ -5,7 +5,7 @@
 \title{Distance of kth neighbor plot}
 \usage{
 caliper_distance_plot(
-  scm,
+  csm,
   tops = 1:3,
   caliper = NULL,
   target_percentile = NULL,
@@ -13,13 +13,13 @@ caliper_distance_plot(
 )
 }
 \arguments{
-\item{scm}{A csm_matches object}
+\item{csm}{A csm_matches object}
 
 \item{tops}{A vector of integers indicating which nearest neighbors
 to plot}
 
 \item{caliper}{Optional caliper value to plot as a vertical line.
-Otherwise it will take caliper from scm object.  If NA will plot
+Otherwise it will take caliper from csm object.  If NA will plot
 no line.}
 
 \item{target_percentile}{Optional target percentile for caliper,

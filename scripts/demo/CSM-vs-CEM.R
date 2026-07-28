@@ -48,7 +48,7 @@ for (num_bins in c(4, 1)){
                       metric = "maximum",
                       caliper = caliper,  # impt: caliper
                       cal_method = "adaptive", # not important
-                      est_method = "scm", # impt: weighting method
+                      est_method = "csm", # impt: weighting method
                       return = "all",
                       dist_scaling = DIST_SCALING
       )
@@ -137,7 +137,7 @@ mvtnorm::dmvnorm(x = c(x1_test, x2_test),
 
 # cem_scm = get_att_cem(uniform_df,
 #                       num_bins=num_bins,
-#                       est_method="scm",
+#                       est_method="csm",
 #                       estimand = "CEM-ATT")
 # cem_avg = get_att_cem(uniform_df,
 #                       num_bins=num_bins,

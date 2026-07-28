@@ -1,4 +1,4 @@
-setwd("~/Dropbox (Harvard University)/Xiang_Luke/scmatch2")
+setwd("~/Dropbox (Harvard University)/Xiang_Luke/CSMatch")
 library(tidyverse)
 require(mvtnorm)
 source("./R/sim_data.R")

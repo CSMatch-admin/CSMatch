@@ -136,7 +136,7 @@ make_df_multi <- function(
   }
 
   # Generate noiseless skeleton (f0_sd = 0 → Y0_denoised = f0_fun(X))
-  df_raw <- CSM:::gen_df_adv_k(
+  df_raw <- CSMatch:::gen_df_adv_k(
     nc = nc, nt = nt, k = 2,
     f0_sd         = 0,
     tx_effect_fun = tx_fun_mat,
@@ -230,7 +230,7 @@ one_iter <- function(
     scaling    = 1,
     k          = k_match,
     warn       = FALSE,
-    est_method = "scm"
+    est_method = "csm"
   )
 
   true_satt <- df %>%
@@ -239,7 +239,7 @@ one_iter <- function(
     pull(att)
 
 
-  ATT <- CSM:::get_att_point_est(mtch,
+  ATT <- CSMatch:::get_att_point_est(mtch,
                                  treatment = "Z",
                                  outcome   = "Y" )
 

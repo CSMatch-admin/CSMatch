@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -J all_sims-bias_mse
-#SBATCH -o /homes2/xmeng/scmatch2/logs/all_%A_%a.out
-#SBATCH -e /homes2/xmeng/scmatch2/logs/all_%A_%a.err
+#SBATCH -o /homes2/xmeng/CSMatch/logs/all_%A_%a.out
+#SBATCH -e /homes2/xmeng/CSMatch/logs/all_%A_%a.err
 #SBATCH -c 4
 #SBATCH --mem=8G
 #SBATCH -t 02:30:00
@@ -12,7 +12,7 @@
 # Output written to data/outputs/sims-bias_mse/<sim>/iter_####.csv
 # ---------------------------------------------------------------------
 
-project_dir="/homes2/xmeng/scmatch2/"
+project_dir="/homes2/xmeng/CSMatch/"
 module load R/4.3.2
 mkdir -p "${project_dir}/logs"
 cd "${project_dir}" || exit 1

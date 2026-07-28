@@ -223,7 +223,7 @@ test_that("gen_match adaptive caliper", {
                                rad_method = "adaptive",
                                scaling = 1)
 
-  treatment_table = CSM:::make_treatment_table(res)
+  treatment_table = CSMatch:::make_treatment_table(res)
   expect_equal( as.numeric(treatment_table$adacal),
                 c( 1, 5, 1, 2 ) )
   expect_equal( as.numeric(treatment_table$max_dist),
@@ -288,14 +288,14 @@ test_that("set_NA_to_unmatched_co should get the correct output",{
   test_df <-
     data.frame(Z=c(1,1, 0,0,0),
                X=c(0,3.2, 0.5,0.8,3))
-  dm_uncapped <- CSM:::gen_dm(data=test_df,
+  dm_uncapped <- CSMatch:::gen_dm(data=test_df,
                               covs="X",
                               treatment="Z",
                               scaling=1,
                               metric="maximum")
   dm_uncapped
   radius_sizes <- c(1, 0.1)
-  res <- CSM:::set_NA_to_unmatched_co(dm_uncapped, radius_sizes)
+  res <- CSMatch:::set_NA_to_unmatched_co(dm_uncapped, radius_sizes)
   res
   expected_res <-  t(matrix(c(0.5, 0.8, NA),ncol=1))
   colnames(expected_res) <- c(3,4,5)
@@ -320,7 +320,7 @@ test_that("get_matched_co_from_dm should get the correct output",{
   treatment = "Z"
   test_df_trt <- test_df %>%
     filter(.data[[treatment]] == 1)
-  res <- CSM:::get_matched_co_from_dm_trimmed(data=test_df,
+  res <- CSMatch:::get_matched_co_from_dm_trimmed(data=test_df,
                                               dm_trimmed=dm_trimmed,
                                               treatment=treatment)
   # Convert the actual result (list element) to a standard data frame
@@ -408,7 +408,7 @@ test_that("est_weights works fine", {
     est_weights(covs = covs,
                 matched_gps = matched_gps,
                 scaling = scaling,
-                est_method = "scm",
+                est_method = "csm",
                 metric = metric)
 
   scweights
@@ -418,7 +418,7 @@ test_that("est_weights works fine", {
   expect_equal( length( scweights2 ), 2 )
   expect_equal( scweights2[[2]]$weights, c( 1, rep(0.25, 4 ) ) )
 
-  scweights2 <- est_weights(scmatches, est_method = "scm")
+  scweights2 <- est_weights(scmatches, est_method = "csm")
   expect_equal( scweights, scweights2$matches )
 
 })

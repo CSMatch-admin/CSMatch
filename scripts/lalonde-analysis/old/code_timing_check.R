@@ -41,7 +41,7 @@ lalonde_scmA <- lalonde_df %>%
     metric = METRIC,
     rad_method = CAL_METHOD,
     scaling = DIST_SCALING,
-    est_method = "scm"
+    est_method = "csm"
   )
 
 lalonde_scmA
@@ -57,7 +57,7 @@ lalonde_scmB <- lalonde_df %>%
     metric = METRIC,
     rad_method = CAL_METHOD,
     scaling = DIST_SCALING,
-    est_method = "scm",
+    est_method = "csm",
     dm = lalonde_scm$dm_uncapped
   )
 

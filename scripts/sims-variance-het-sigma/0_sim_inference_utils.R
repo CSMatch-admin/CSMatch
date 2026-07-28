@@ -116,7 +116,7 @@ toy_match_infer_het <- function(
     nbins         = 6,
     rad_method    = "adaptive",
     k_match       = 2,
-    est_method    = "scm",
+    est_method    = "csm",
     K_tt          = 2,
     seed_addition = 11,
     grid_id       = 1,
@@ -299,7 +299,7 @@ toy_match_infer_het <- function(
 sim_master_het <- function(
     iteration, N = 600, overlap_label,
     sigma1_extra = 0,
-    rad_method   = "adaptive", k_match = 2, est_method = "scm",
+    rad_method   = "adaptive", k_match = 2, est_method = "csm",
     k_dim = 2, grid_id = 1, K_tt = 2, ...
 ) {
   prop_nc_unif_values <- c(

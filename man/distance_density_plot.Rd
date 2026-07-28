@@ -4,10 +4,10 @@
 \alias{distance_density_plot}
 \title{Calculate distances from treated units to their controls}
 \usage{
-distance_density_plot(scm, feasible_only = FALSE, boxplot_style = TRUE)
+distance_density_plot(csm, feasible_only = FALSE, boxplot_style = TRUE)
 }
 \arguments{
-\item{scm}{A csm_matches object}
+\item{csm}{A csm_matches object}
 
 \item{feasible_only}{If TRUE, only plot distances for treated units
 that were feasible and matched.}

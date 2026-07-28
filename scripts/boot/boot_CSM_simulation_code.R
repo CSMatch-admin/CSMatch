@@ -277,7 +277,7 @@ get_matches_and_debiased_residuals <- function(
 #       metric = "maximum",
 #       scaling = scaling,
 #       rad_method = "fixed",
-#       est_method = "scm",
+#       est_method = "csm",
 #       return = "all"
 #     )
 #   } else if (dgp_name == "otsu") {

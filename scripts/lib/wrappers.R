@@ -159,7 +159,7 @@ get_att_ps_lm <- function(d,
   m_lm_ps <- glm(form, data = d, family="binomial")
 
   d %>%
-    mutate(e = CSM:::invlogit(predict(m_lm_ps, newdata=.)),
+    mutate(e = CSMatch:::invlogit(predict(m_lm_ps, newdata=.)),
            wt = ifelse(Z, 1, e/(1-e))) %>%   # for ATT
     summarize(ATThat =
                 sum(Z*wt*Y) / sum(Z*wt) -              # tx weighted mean
@@ -240,7 +240,7 @@ get_att_csm <- function(d,
                         metric = "maximum",
                         scaling,
                         rad_method = "adaptive",
-                        est_method = "scm",
+                        est_method = "csm",
                         warn = FALSE ) {
   preds_csm <- get_cal_matches(
     data = d,
@@ -288,7 +288,7 @@ get_att_csm <- function(d,
 #'
 #' @param matching_type A string specifying the type of matching.
 #'   Supported types are:
-#'   - `"maximum_fixed_scm"`: Uses the maximum metric with fixed radius and SCM estimation.
+#'   - `"maximum_fixed_scm"`: Uses the maximum metric with fixed radius and CSM estimation.
 #'   - `"euclidean_knn"`: Uses the Euclidean metric with k-nearest neighbors.
 #' @param df_dgp A data frame containing the dataset to be matched.
 #'   The dataset should include treatment and covariate columns.
@@ -343,7 +343,7 @@ get_matches <- function( matching_type,
       metric = "maximum",
       scaling = scaling,
       rad_method = "fixed",
-      est_method = "scm"
+      est_method = "csm"
     )
 
   } else if (matching_type == "euclidean_knn") {
@@ -369,16 +369,16 @@ get_matches <- function( matching_type,
 
 
 # Code to implement CEM matching via the MatchIt package
-# Allows SCM within cells if desired.
+# Allows CSM within cells if desired.
 get_cem_matches <- function(
     data,
-    covs = CSM:::get_x_vars(data),
+    covs = CSMatch:::get_x_vars(data),
     Z_FORMULA = as.formula(paste0("Z~",
                                   paste0(grep("^X", names(data), value=T),
                                          collapse="+"))),
     num_bins,
     cutpoints = NULL,
-    est_method = c("average", "scm"),
+    est_method = c("average", "csm"),
     return = c("sc_units", "agg_co_units", "all"), warn = TRUE ) {
 
   if ( is.character(Z_FORMULA)) {

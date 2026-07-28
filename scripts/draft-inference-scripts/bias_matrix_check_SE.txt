@@ -29,7 +29,7 @@ N\_T = 10 & 0.96 & 0.45 & 0.52\\
 N\_T = 25 & 0.71 & 0.98 & 0.68\\
 N\_T = 50 & 0.82 & 0.72 & 0.57\\
 \hline
-\multicolumn{4}{|c|}{Boot SE (Sign, SCM Weight)} \\
+\multicolumn{4}{|c|}{Boot SE (Sign, CSM Weight)} \\
 \hline
 & High Overlap & Mid Overlap & Low Overlap\\
 \hline
@@ -47,7 +47,7 @@ N\_T = 10 & 0.018 & -0.15 & -0.29\\
 N\_T = 25 & -0.077 & -0.073 & -0.4\\
 N\_T = 50 & -0.054 & -0.11 & -0.32\\
 \hline
-\multicolumn{4}{|c|}{Boot SE (Wild, SCM Weight)} \\
+\multicolumn{4}{|c|}{Boot SE (Wild, CSM Weight)} \\
 \hline
 & High Overlap & Mid Overlap & Low Overlap\\
 \hline

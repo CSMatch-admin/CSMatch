@@ -203,7 +203,7 @@ ferman_1nn <- get_cal_matches( ferman_for_analysis,
                                rad_method = "knn-capped",
                                scaling = scaling,
                                k = 1,
-                               est_method = "scm")
+                               est_method = "csm")
 estimate_ATT( ferman_1nn )
 s_fin$ATT_All[ s_fin$method == "1-NN" ]
 
@@ -346,7 +346,7 @@ ferman_cem <- ferman_for_analysis %>%
     metric = "maximum",   # "maximum", "euclidean", "manhattan"
     rad_method = "adaptive",
     scaling = scaling,
-    est_method = "scm")
+    est_method = "csm")
 
 
 

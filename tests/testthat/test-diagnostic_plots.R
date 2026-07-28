@@ -19,7 +19,7 @@ test_that("diagnostic plots", {
                          metric = "maximum",
                          caliper = 1,
                          rad_method = "adaptive",
-                         est_method = "scm",
+                         est_method = "csm",
                          scaling = 1)
 
   feasible <- feasible_units(res)
@@ -30,7 +30,7 @@ test_that("diagnostic plots", {
   covs = c( "X", "X2","X3" )
 
   love_plot_df <-
-    CSM:::create_love_plot_df( res = res,
+    CSMatch:::create_love_plot_df( res = res,
                                covs = covs)
   love_plot_df
 

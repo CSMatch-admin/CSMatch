@@ -303,7 +303,7 @@ unmatched_units <- function( csm ) {
 #' This table summarizes the estimated impact for each treated unit,
 #' along with the effective sample size of the controls used.
 #'
-#' @param scm A csm_matches object from a matching call.
+#' @param csm A csm_matches object from a matching call.
 #' @param outcome Name of the outcome variable.
 #' @return dataframe with one row per treated unit, with columns:
 #'   subclass, max_dist, outcome (estimated impact), precision
@@ -312,11 +312,11 @@ unmatched_units <- function( csm ) {
 #' @export
 #'
 #'
-impact_table <- function( scm, outcome ) {
+impact_table <- function( csm, outcome ) {
 
-  tx_var = attr( scm, "settings" )$treatment
+  tx_var = attr( csm, "settings" )$treatment
 
-  rr = result_table( scm, include_caliper = TRUE, nonzero_weight_only = TRUE )
+  rr = result_table( csm, include_caliper = TRUE, nonzero_weight_only = TRUE )
 
   rr$Y = ifelse( rr[[tx_var]], 1, -1 ) * rr[[ outcome ]]
 
@@ -344,7 +344,7 @@ impact_table <- function( scm, outcome ) {
 #'   matched controls for units that could be matched without
 #'   expanding the caliper.
 #' @param nonzero_weight_only TRUE means drop any control units with 0
-#'   weight (e.g., due to scm weighting).
+#'   weight (e.g., due to csm weighting).
 #' @param return How to aggregate units, if at all, in making the
 #'   result table.  Possible values: "sc_units" (the synthetic control
 #'   units), "agg_co_units" (the unique control units, with total
@@ -464,7 +464,7 @@ full_unit_table <- function(csm,
 #'                         scaling = c(1/0.2, 1/0.2),
 #'                         caliper = 1,
 #'                         rad_method = "adaptive",
-#'                         est_method = "scm")
+#'                         est_method = "csm")
 #'
 #' # View matching results
 #' mtch
@@ -557,7 +557,7 @@ treatment_table <- function( csm, id = NULL, threshold = NULL,
 #' @param csm A csm_matches object
 #' @param threshold Distance threshold for bad matches
 #' @param nonzero_weight_only TRUE means drop any control units with 0
-#'   weight (e.g., due to scm weighting)
+#'   weight (e.g., due to csm weighting)
 #'
 #' @return Dataframe of bad matches
 #' @export

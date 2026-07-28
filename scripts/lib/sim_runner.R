@@ -158,21 +158,21 @@ run_all_methods <- function(df,
       dplyr::all_of(covs),
       function(x) if (is.numeric(x)) (2 * nbins) / (max(x) - min(x)) else 1000
     ))
-  r_csm_scm <- safe_compute("csm_scm", get_att_csm(df, scaling = dist_scaling_csm, est_method = "scm",
+  r_csm_scm <- safe_compute("csm_scm", get_att_csm(df, scaling = dist_scaling_csm, est_method = "csm",
                                                    warn=FALSE,
                                                    rad_method = "fixed"))
   r_csm_avg <- safe_compute("csm_avg", get_att_csm(df, scaling = dist_scaling_csm, est_method = "average",
                                                    warn=FALSE,
                                                    rad_method = "fixed"))
-  r_cem_scm <- safe_compute("cem_scm", get_att_cem(df, num_bins = nbins, est_method = "scm",     estimand = "CEM-ATT"))
+  r_cem_scm <- safe_compute("cem_scm", get_att_cem(df, num_bins = nbins, est_method = "csm",     estimand = "CEM-ATT"))
   r_cem_avg <- safe_compute("cem_avg", get_att_cem(df, num_bins = nbins, est_method = "average", estimand = "CEM-ATT"))
   r_onenn   <- safe_compute("onenn",   get_att_1nn(df, scaling = dist_scaling))
 
   # Half-bin variants at half granularity: CEM uses nbins/2, CSM uses 2*(nbins/2) = nbins
   # (dist_scaling is already nbins/(max-min), so it gives CSM caliper = range/nbins = 2× CEM bin-width)
-  r_csm_scm_half <- safe_compute("csm_scm_half", get_att_csm(df, scaling = dist_scaling,      est_method = "scm",     rad_method = "fixed"))
+  r_csm_scm_half <- safe_compute("csm_scm_half", get_att_csm(df, scaling = dist_scaling,      est_method = "csm",     rad_method = "fixed"))
   r_csm_avg_half <- safe_compute("csm_avg_half", get_att_csm(df, scaling = dist_scaling,      est_method = "average", rad_method = "fixed"))
-  r_cem_scm_half <- safe_compute("cem_scm_half", get_att_cem(df, num_bins = nbins / 2, est_method = "scm",     estimand = "CEM-ATT"))
+  r_cem_scm_half <- safe_compute("cem_scm_half", get_att_cem(df, num_bins = nbins / 2, est_method = "csm",     estimand = "CEM-ATT"))
   r_cem_avg_half <- safe_compute("cem_avg_half", get_att_cem(df, num_bins = nbins / 2, est_method = "average", estimand = "CEM-ATT"))
   r_tmle1   <- safe_compute("tmle1",   get_att_tmle(df, form = form, Q.SL.library = SL.library1,  g.SL.library = SL.library1))
   r_aipw1   <- safe_compute("aipw1",   get_att_aipw(df, form = form, Q.SL.library = SL.library1,  g.SL.library = SL.library1))

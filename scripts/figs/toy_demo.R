@@ -35,12 +35,12 @@ true_att
 #   what CSM is supposed to do
 good_wt <- c(1,1,0,0,1,1)
 (good_est_att <-
-    CSM:::get_att_point_est(df_six_points,
+    CSMatch:::get_att_point_est(df_six_points,
                         weights=good_wt))
 
 diff_wt <- c(1,1,rep(1/2,4))
 (diff_est <-
-    CSM:::get_att_point_est(df_six_points,
+    CSMatch:::get_att_point_est(df_six_points,
                         weights=diff_wt))
 
 
@@ -52,7 +52,7 @@ diff_wt <- c(1,1,rep(1/2,4))
 # wt = 1/3 for 5th, 6th unit (good controls)
 # weighted sum of Y in 1st, 2nd - weighted sum of Y in 3rd-6th units
 bad_wt <- c(1,1,2/3,2/3,1/3,1/3)
-(bad_est_att <- CSM:::get_att_point_est(df_six_points,
+(bad_est_att <- CSMatch:::get_att_point_est(df_six_points,
                     weights=bad_wt))
 
 ## SBW1
@@ -65,7 +65,7 @@ m_bal_1 <- optweight(zform1,
                    estimand = "ATT")
 m_bal_1$weights[3:6] * 0.5
 (bal_1_est_att <-
-    CSM:::get_att_point_est(df_six_points,
+    CSMatch:::get_att_point_est(df_six_points,
                         weights=m_bal_1$weights))
 zform2 <- as.formula("Z ~ X1*X2")
 m_bal_2 <- optweight(zform2,
@@ -75,7 +75,7 @@ m_bal_2 <- optweight(zform2,
 m_bal_1$weights[3:6]
 m_bal_2$weights[3:6]
 (bal_2_est_att <-
-    CSM:::get_att_point_est(df_six_points,
+    CSMatch:::get_att_point_est(df_six_points,
                         weights=m_bal_2$weights))
 
 
@@ -108,7 +108,7 @@ cal_matches <- get_cal_matches(df_six_points,
                 metric = c("maximum"), # semi-important
                 caliper = 1,  # impt: caliper
                 rad_method = "adaptive", # not important
-                est_method = "scm", # impt: weighting method
+                est_method = "csm", # impt: weighting method
                 scaling = 1 # impt: scaling matrix
                 )
 

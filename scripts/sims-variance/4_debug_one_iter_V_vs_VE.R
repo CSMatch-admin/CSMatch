@@ -8,7 +8,7 @@
 # What it does:
 #   - Runs ONE toy iteration (same generator + matcher)
 #   - Runs TWO matching procedures side-by-side:
-#       (A) adaptive radius + SCM weights (your current default)
+#       (A) adaptive radius + CSM weights (your current default)
 #       (B) k-NN (k=5) + average weights
 #   - Computes V_E (pooled) via get_measurement_error_variance()
 #   - Manually reconstructs the pieces used inside get_total_variance:
@@ -205,7 +205,7 @@ compute_extra_diags <- function(matches_df, treatment = "Z") {
 # Run TWO matchers
 # ------------------------------------------------------------------
 
-# (A) adaptive + SCM (your current config)
+# (A) adaptive + CSM (your current config)
 mtch_scm <- get_cal_matches(
   data = df,
   form = Z ~ X1 + X2,
@@ -213,7 +213,7 @@ mtch_scm <- get_cal_matches(
   scaling = scaling,
   k = 5,
   warn = FALSE,
-  est_method = "scm"
+  est_method = "csm"
 )
 matches_scm <- full_unit_table(mtch_scm)
 
@@ -232,7 +232,7 @@ matches_avg <- full_unit_table(mtch_avg)
 # ------------------------------------------------------------------
 # Compute and print comparison table
 # ------------------------------------------------------------------
-stats_scm <- compute_debug_stats(matches_scm) %>% mutate(method = "adaptive + scm")
+stats_scm <- compute_debug_stats(matches_scm) %>% mutate(method = "adaptive + csm")
 stats_avg <- compute_debug_stats(matches_avg) %>% mutate(method = "knn(k=5) + average")
 
 compare_tbl <- bind_rows(stats_scm, stats_avg) %>%
@@ -284,7 +284,7 @@ print_method_block <- function(method_name, stats_row) {
   cat("SE_alt2    = sqrt(var(indiv_effect)/N_T + V_E)       =", sprintf("%.6f", stats_row$SE_alt2), "\n")
 }
 
-print_method_block("adaptive + scm", stats_scm %>% select(-method) %>% as.list())
+print_method_block("adaptive + csm", stats_scm %>% select(-method) %>% as.list())
 print_method_block("knn(k=5) + average", stats_avg %>% select(-method) %>% as.list())
 
 # ------------------------------------------------------------------
@@ -297,7 +297,7 @@ cat("\n============================================================\n")
 cat("EXTRA DIAGNOSTICS: CONTROL REUSE\n")
 cat("============================================================\n")
 
-cat("\n---- adaptive + scm ----\n")
+cat("\n---- adaptive + csm ----\n")
 cat("controls used (unique ids) =", diag_scm$n_unique_controls_used, "\n")
 cat("summary(sum_w):\n")
 print(diag_scm$reuse_summary)
@@ -315,7 +315,7 @@ cat("\n============================================================\n")
 cat("EXTRA DIAGNOSTICS: CONTROL COUNTS PER SUBCLASS (SMALLEST FIRST)\n")
 cat("============================================================\n")
 
-cat("\n---- adaptive + scm (head 20) ----\n")
+cat("\n---- adaptive + csm (head 20) ----\n")
 print(diag_scm$subclass_ctrl_n_head20)
 
 cat("\n---- knn(k=5) + average (head 20) ----\n")

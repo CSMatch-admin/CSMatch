@@ -83,7 +83,7 @@ ggsave(here::here("figures/lalonde_distance_density.pdf"),
 
 cat( "Comparison of Methods Table\n" )
 
-# The paper compares ESS and distance of SCM, Average, and 1-NN.
+# The paper compares ESS and distance of CSM, Average, and 1-NN.
 
 ss <- sensitivity_table( lalonde_scm,
                          include_distances = TRUE )

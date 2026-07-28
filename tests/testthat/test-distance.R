@@ -4,7 +4,7 @@ test_that("Making the {{ }} call work", {
   df <- data.frame(X1=1:4,
                    X2=4:1,
                    Z = c(0, 1, 0, 1))
-  dm <- CSM:::gen_dm(df,
+  dm <- CSMatch:::gen_dm(df,
                covs=starts_with("X"),
                treatment=Z)
   expect_true(is.matrix(dm))
@@ -77,7 +77,7 @@ test_that("Manual computation should match the gen_dm output",{
   expected_dm <-
     matrix(c(sqrt(2), sqrt(18), sqrt(2),  sqrt(2)), nrow = 2)
 
-  actual_dm <- CSM:::gen_dm(df, covs, treatment,
+  actual_dm <- CSMatch:::gen_dm(df, covs, treatment,
                       scaling=1,
                       metric = "euclidean")
   # only check
@@ -105,7 +105,7 @@ test_that("Continueous scaling and categorical scaling align as expected",{
   covs <- c("X1", "X2")
   treatment <- "Z"
 
-  actual_dm <- CSM:::gen_dm(df, covs, treatment,
+  actual_dm <- CSMatch:::gen_dm(df, covs, treatment,
                             scaling= 1 / c( 0.2, 0.5 ),
                             metric = "maximum")
 

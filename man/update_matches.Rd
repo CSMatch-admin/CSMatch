@@ -28,7 +28,7 @@ mtch <- get_cal_matches(dat,
                         scaling = c(1/0.2, 1/0.2),
                         caliper = 1,
                         rad_method = "adaptive",
-                        est_method = "scm")
+                        est_method = "csm")
 
 # View matching results
 mtch

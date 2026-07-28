@@ -52,7 +52,7 @@ mtch <-  get_cal_matches(
   scaling    = 1,
   k          = 1,
   warn       = FALSE,
-  est_method = "scm"
+  est_method = "csm"
 )
 mtch
 

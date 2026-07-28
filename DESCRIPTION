@@ -1,4 +1,4 @@
-Package: CSM
+Package: CSMatch
 Title: Caliper Synthetic Method (CSM) for matching in observational studies 
 Version: 0.0.0.9000
 Authors@R: 

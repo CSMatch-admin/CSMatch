@@ -37,7 +37,7 @@ ferman_csm <- ferman_for_analysis %>%
     rad_method = "adaptive",
     scaling = scaling,
     k = 1,
-    est_method = "scm")
+    est_method = "csm")
 
 
 

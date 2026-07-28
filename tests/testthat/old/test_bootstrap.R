@@ -16,7 +16,7 @@ test_split_data <- function(){
     metric = "maximum",
     dist_scaling = dist_scaling,
     cal_method = "fixed",
-    est_method = "scm",
+    est_method = "csm",
     return = "all",
     knn = 25)
 
@@ -87,7 +87,7 @@ test_regression_se <- function(){
     metric = "maximum",
     dist_scaling = dist_scaling,
     cal_method = "fixed",
-    est_method = "scm",
+    est_method = "csm",
     return = "agg_co_units",
     knn = 25)
   lm_test_weighted<-
@@ -124,7 +124,7 @@ test_regression_se <- function(){
     metric = "maximum",
     dist_scaling = dist_scaling,
     cal_method = "fixed",
-    est_method = "scm",
+    est_method = "csm",
     return = "agg_co_units",
     knn = 25)
   lm_test<-
@@ -156,7 +156,7 @@ test_SL_fit_and_pred_linear <- function(){
     metric = "maximum",
     dist_scaling = dist_scaling,
     cal_method = "fixed",
-    est_method = "scm",
+    est_method = "csm",
     return = "all",
     knn = 25)
 
@@ -197,7 +197,7 @@ test_SL_fit_and_pred_non_linear <- function(){
     metric = "maximum",
     dist_scaling = dist_scaling,
     cal_method = "fixed",
-    est_method = "scm",
+    est_method = "csm",
     return = "all",
     knn = 25)
 

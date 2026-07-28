@@ -295,7 +295,7 @@ boot_naive <- function(d,
                        metric,
                        rad_method,
                        dist_scaling,
-                       est_method = "scm",
+                       est_method = "csm",
                        knn = 25,
                        B=50) {
   map_dfr(1:B,

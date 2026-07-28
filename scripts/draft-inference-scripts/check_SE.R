@@ -50,20 +50,20 @@ for (r in 1:R) {
         scaling = 1,
         caliper = caliper,
         rad_method = "adaptive",
-        est_method = "scm"
+        est_method = "csm"
       )
 
-      AE_res <- CSM:::get_se_AE(
+      AE_res <- CSMatch:::get_se_AE(
         mtch,
         outcome = "Y",
         treatment = "Z",
         var_weight_type = "uniform"
       )
 
-      CMSE_true <- CSM:::get_plug_in_SE(AE_res$N_T, AE_res$N_C_tilde, sigma)
+      CMSE_true <- CSMatch:::get_plug_in_SE(AE_res$N_T, AE_res$N_C_tilde, sigma)
 
-      SE_boot_sign <- CSM:::boot_SE(mtch, B = 100, boot_mtd = "sign")
-      SE_boot_wild <- CSM:::boot_SE(mtch, B = 100, boot_mtd = "wild")
+      SE_boot_sign <- CSMatch:::boot_SE(mtch, B = 100, boot_mtd = "sign")
+      SE_boot_wild <- CSMatch:::boot_SE(mtch, B = 100, boot_mtd = "wild")
 
       # Store SE estimates for each scenario
       se_estimates[i, j, r, 1] <- CMSE_true

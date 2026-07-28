@@ -4,10 +4,10 @@
 \alias{get_distance_table}
 \title{Calculate distances from all matched treatment units to controls}
 \usage{
-get_distance_table(scm, long_table = FALSE)
+get_distance_table(csm, long_table = FALSE)
 }
 \arguments{
-\item{scm}{A csm_matches object}
+\item{csm}{A csm_matches object}
 
 \item{long_table}{If TRUE, return a long-form table with method and
 distance columns.  If FALSE each tx unit is a row.}

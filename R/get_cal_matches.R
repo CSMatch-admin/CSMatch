@@ -116,7 +116,7 @@ make_treatment_table <- function( matches ) {
 #'                         scaling = c(1/0.2, 1/0.2),
 #'                         caliper = 1,
 #'                         rad_method = "adaptive",
-#'                         est_method = "scm")
+#'                         est_method = "csm")
 #'
 #' # View matching results
 #' mtch
@@ -132,7 +132,7 @@ get_cal_matches <- function( data,
                              metric = c("maximum", "euclidean", "manhattan"),
                              caliper = 1,
                              rad_method = c("adaptive", "fixed", "1nn", "knn", "knn-capped"),
-                             est_method = c("scm", "scm_extrap", "average"),
+                             est_method = c("csm", "csm_extrap", "average"),
                              scaling = NULL,
                              id_name = "id",
                              warn = TRUE ,
@@ -196,7 +196,7 @@ get_cal_matches <- function( data,
   # frame of matched controls for the given unit.
 
 
-  ### use est_method to add individual unit weights: scm or average
+  ### use est_method to add individual unit weights: csm or average
   scweights <- est_weights( matched_gps = scmatches,
                             est_method = est_method)
 

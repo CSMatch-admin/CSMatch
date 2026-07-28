@@ -1,8 +1,8 @@
 # scripts/sims-variance/1_parallel_sim_inference.R
 #
 # SLURM usage (via one of the three sh scripts):
-#   sbatch run-adaptive-k5-scm.sh        # adaptive caliper, k=5, SCM weights
-#   sbatch run-adaptive-k1-scm.sh        # adaptive caliper, k=1, SCM weights
+#   sbatch run-adaptive-k5-csm.sh        # adaptive caliper, k=5, CSM weights
+#   sbatch run-adaptive-k1-csm.sh        # adaptive caliper, k=1, CSM weights
 #   sbatch run-knn-k5-avg.sh             # k-NN, k=5, average weights
 #
 # Direct usage:
@@ -13,7 +13,7 @@
 #   output_name  subdirectory under data/outputs/  (e.g. sims-variance)
 #   rad_method   "adaptive" or "knn"
 #   k            integer caliper / neighbour count
-#   est_method   "scm" or "average"
+#   est_method   "csm" or "average"
 
 suppressPackageStartupMessages({
   library(dplyr)
@@ -40,7 +40,7 @@ est_method  <- args[[5]]
 if (is.na(iter) || iter <= 0) stop("iter_id must be a positive integer", call. = FALSE)
 if (!rad_method %in% c("adaptive", "knn")) stop("rad_method must be 'adaptive' or 'knn'", call. = FALSE)
 if (is.na(k_match) || k_match <= 0) stop("k must be a positive integer", call. = FALSE)
-if (!est_method %in% c("scm", "average")) stop("est_method must be 'scm' or 'average'", call. = FALSE)
+if (!est_method %in% c("csm", "average")) stop("est_method must be 'csm' or 'average'", call. = FALSE)
 
 # ---- Source utils ----
 source(here::here("scripts/sims-variance/0_sim_inference_utils.R"))

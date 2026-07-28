@@ -116,7 +116,7 @@ lalonde_scm <- lalonde_df %>%
     metric = "maximum",
     rad_method = "adaptive",
     scaling = DIST_SCALING,
-    est_method = "scm"
+    est_method = "csm"
   )
 
 lalonde_scm

@@ -1,5 +1,5 @@
 # install.packages("devtools")  # (if needed)
-# devtools::install_github("jche/scmatch2")
+# devtools::install_github("jche/CSMatch")
 
 library(CSM)
 
@@ -12,7 +12,7 @@ mtch <- get_cal_matches( dat,
                          scaling = c( 1/0.2, 1/0.2),
                          caliper = 1,
                          rad_method = "adaptive",
-                         est_method = "scm" )
+                         est_method = "csm" )
 mtch
 
 mtch$treatment_table # a table of statistics on the treated units
@@ -41,7 +41,7 @@ mtch <- get_cal_matches( toy_data_6d,
                          scaling = rep(1,6)/0.2,
                          caliper = 1,
                          rad_method = "adaptive",
-                         est_method = "scm" )
+                         est_method = "csm" )
 mtch
 
 mtch$treatment_table # a table of statistics on the treated units

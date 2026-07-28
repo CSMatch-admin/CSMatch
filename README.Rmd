@@ -30,7 +30,7 @@ library( CSM )
 
 
 
-# Caliper Synthetic Matching (scmatch2)
+# Caliper Synthetic Matching (CSMatch)
 
 This package implements the Caliper Synthetic Matching approach, which is a blend of radius matching using distance metrics put on the covariate distribution itself, and the synthetic control method.
 In particular, it identifies sets of units local to each treated unit in turn, and then makes a synthetic control for each treated unit using those local units.
@@ -46,7 +46,7 @@ You can install the development version of CSM from [GitHub](https://github.com/
 
 ```
 # install.packages("devtools")  # (if needed)
-devtools::install_github("jche/scmatch2")
+devtools::install_github("jche/CSMatch")
 ```
 
 
@@ -70,7 +70,7 @@ mtch <- get_cal_matches( dat,
                          scaling = c( 1/0.2, 1/0.2 ),
                          caliper = 1, 
                          rad_method = "adaptive", 
-                         est_method = "scm" ) 
+                         est_method = "csm" ) 
 mtch
 ```
 

@@ -16,7 +16,7 @@ set.seed(42)
 # 1. Data generation
 # ------------------------------------------------------------------------------
 set.seed(42)
-df <- CSM:::gen_one_toy(nc = 80, nt = 25, f0_sd = 0.5)
+df <- CSMatch:::gen_one_toy(nc = 80, nt = 25, f0_sd = 0.5)
 form   <- Z ~ X1 + X2
 nbins  <- 6
 covs   <- parse_form(form)$covs

@@ -29,7 +29,7 @@ matched controls for units that could be matched without
 expanding the caliper.}
 
 \item{nonzero_weight_only}{TRUE means drop any control units with 0
-weight (e.g., due to scm weighting).}
+weight (e.g., due to csm weighting).}
 
 \item{include_caliper}{If TRUE, include columns for the caliper size
 and maximum distance for each treated unit.}

@@ -39,7 +39,7 @@ for (overlap_label in overlap_labels) {
       sigma1_extra = sigma1_extra,
       rad_method   = "adaptive",
       k_match      = 2,
-      est_method   = "scm",
+      est_method   = "csm",
       K_tt         = 2
     )
 

@@ -51,7 +51,7 @@ Overlap is controlled by the proportion of controls sampled uniformly on
 the unit square (`prop_nc_unif`): - very_low = 2/3 - low = 1/2 - mid =
 1/3 - high = 1/5 - very_high = 1/10
 
-Matching uses an adaptive caliper scheme (k=5) and SCM aggregation (see
+Matching uses an adaptive caliper scheme (k=5) and CSM aggregation (see
 `toy_match_infer()`).
 
 ------------------------------------------------------------------------

@@ -168,7 +168,7 @@ toy_match_infer <- function(
   scaling <- compute_toy_scaling(df, nbins = nbins)
 
   # --- matching: mimic your snippet intent ---
-  # adaptive caliper w/ k=5 (shrink/expand) and est_method "scm"
+  # adaptive caliper w/ k=5 (shrink/expand) and est_method "csm"
   mtch <- tryCatch({
     get_cal_matches(
       data = df,

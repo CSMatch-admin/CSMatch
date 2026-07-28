@@ -23,7 +23,7 @@ test_that("calc_N_T_N_C calculates N_T and ESS_C correctly with reused controls"
   # N_C_tilde = N_T^2 / sum(w_j^2) = 2^2 / 2.5 = 4 / 2.5 = 1.6
 
   # --- 3. Run Function ---
-  result <- CSM:::calc_N_T_N_C(mock_matches_df)
+  result <- CSMatch:::calc_N_T_N_C(mock_matches_df)
 
   # --- 4. Check Results ---
   expect_true(is.list(result))
@@ -63,7 +63,7 @@ test_that("agg_co_units works", {
 
   test_scweights <- nested_list
 
-  res <- CSM:::agg_co_units(test_scweights)
+  res <- CSMatch:::agg_co_units(test_scweights)
   expected_weights <- c(1, 0.3, 1.7, 1)
   expect_equal(res$weights, expected_weights)
 
@@ -99,7 +99,7 @@ test_that("agg_sc_units works", {
 
   test_scweights <- nested_list
 
-  res <- CSM:::agg_sc_units(test_scweights)
+  res <- CSMatch:::agg_sc_units(test_scweights)
   #expected_weights <- c(1, 0.3, 1.7, 1)
   #expect_equal(res$weights, expected_weights)
   # Once aggregated, each treated unit has a single synthetic control unit.
@@ -121,7 +121,7 @@ test_that("get_att_point_est works for data.frame with known weights (hand check
     weights = c(1, 1, 2, 1)
   )
 
-  est <- CSM:::get_att_point_est(matched_df, treatment = "Z", outcome = "Y")
+  est <- CSMatch:::get_att_point_est(matched_df, treatment = "Z", outcome = "Y")
   expect_equal(est, 28/3, tolerance = 1e-12)
 })
 
@@ -137,7 +137,7 @@ test_that("get_att_point_est respects custom treatment/outcome column names", {
   # Treated mean = (5*1 + 9*2) / (1+2) = 23/3
   # Control mean = (1*1 + 3*2) / (1+2) = 7/3
   # ATT = 16/3
-  est <- CSM:::get_att_point_est(matched_df, treatment = "treat", outcome = "outc")
+  est <- CSMatch:::get_att_point_est(matched_df, treatment = "treat", outcome = "outc")
   expect_equal(est, 16/3, tolerance = 1e-12)
 })
 
@@ -146,18 +146,18 @@ test_that("get_att_point_est errors if required columns are missing", {
 
   df_no_weights <- tibble::tibble(Z = c(1, 0), Y = c(1, 2))
   expect_error(
-    CSM:::get_att_point_est(df_no_weights, treatment = "Z", outcome = "Y"),
+    CSMatch:::get_att_point_est(df_no_weights, treatment = "Z", outcome = "Y"),
     regexp = "weights"
   )
 
   df_no_outcome <- tibble::tibble(Z = c(1, 0), weights = c(1, 1))
   expect_error(
-    CSM:::get_att_point_est(df_no_outcome, treatment = "Z", outcome = "Y")
+    CSMatch:::get_att_point_est(df_no_outcome, treatment = "Z", outcome = "Y")
   )
 
   df_no_treat <- tibble::tibble(Y = c(1, 2), weights = c(1, 1))
   expect_error(
-    CSM:::get_att_point_est(df_no_treat, treatment = "Z", outcome = "Y")
+    CSMatch:::get_att_point_est(df_no_treat, treatment = "Z", outcome = "Y")
   )
 })
 
@@ -170,7 +170,7 @@ test_that("get_att_point_est errors when treatment column is not binary-present 
   # but with only one group it should be invalid logically.
   # Current implementation may return 0 or NA depending on summarize behavior.
   # We enforce that it should error or be NA to avoid silent misuse.
-  est <- suppressWarnings(CSM:::get_att_point_est(df_all_treated))
+  est <- suppressWarnings(CSMatch:::get_att_point_est(df_all_treated))
   expect_true(is.na(est) || is.nan(est) || is.infinite(est) || identical(est, 0))
 })
 
@@ -185,7 +185,7 @@ test_that("get_att_point_est behavior on csm_matches: return='all' must contain 
     scaling = c(1/0.2, 1/0.2),
     caliper = 0.5,
     rad_method = "adaptive",
-    est_method = "scm"
+    est_method = "csm"
   )
   expect_true(is.csm_matches(mtch))
 
@@ -199,7 +199,7 @@ test_that("get_att_point_est behavior on csm_matches: return='all' must contain 
   expect_true(all(c("Z", "Y", "weights") %in% names(all_tbl)))
 
   # get_att_point_est uses return="all", so it SHOULD work
-  est <- CSM:::get_att_point_est(mtch, treatment = "Z", outcome = "Y")
+  est <- CSMatch:::get_att_point_est(mtch, treatment = "Z", outcome = "Y")
   expect_true(is.numeric(est) && length(est) == 1)
   expect_false(is.na(est))
 
@@ -219,7 +219,7 @@ test_that("get_att_point_est equals weighted diff computed directly from result_
     scaling = c(1/0.2, 1/0.2),
     caliper = 0.5,
     rad_method = "adaptive",
-    est_method = "scm"
+    est_method = "csm"
   )
 
   rt_all <- result_table(mtch, return = "all")
@@ -232,7 +232,7 @@ test_that("get_att_point_est equals weighted diff computed directly from result_
     dplyr::pull(est)
 
   # Now compute via get_att_point_est on a data.frame (not mtch) to avoid sc_units schema issues
-  est <- CSM:::get_att_point_est(rt_all, treatment = "Z", outcome = "Y")
+  est <- CSMatch:::get_att_point_est(rt_all, treatment = "Z", outcome = "Y")
 
   expect_equal(est, direct, tolerance = 1e-12)
 })
@@ -252,7 +252,7 @@ test_that("calculate_subclass_variances calculates variances correctly", {
       weights = runif(2)
     )
   result <-
-    CSM:::calculate_subclass_variances(
+    CSMatch:::calculate_subclass_variances(
       matches_filtered = filtered_data,
       outcome = "Y"
     )
@@ -734,7 +734,7 @@ test_that("calculate_S1_sq_treated_to_treated: hand-check with 2 treated units",
     X1 = c(0, 10, 5),
     Y  = c(5, 20, 12)
   )
-  result <- CSM:::calculate_S1_sq_treated_to_treated(
+  result <- CSMatch:::calculate_S1_sq_treated_to_treated(
     df = df_test, treatment = "Z", outcome = "Y",
     K = 1, covs = "X1",
     scaling = c(X1 = 1), metric = "maximum", id_name = "id"

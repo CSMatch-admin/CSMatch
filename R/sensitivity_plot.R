@@ -43,9 +43,9 @@ sensitivity_table <- function( csm,
   tx_var = args$treatment
   covs = attr( csm, "covariates" )
 
-  if ( args$est_method != "scm" ) {
+  if ( args$est_method != "csm" ) {
     csm <- est_weights( matched_gps = csm,
-                        est_method = "scm")
+                        est_method = "csm")
   }
 
   FATT = estimate_ATT( csm,

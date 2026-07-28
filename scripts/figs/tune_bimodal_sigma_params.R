@@ -63,7 +63,7 @@ eval_params_once <- function(A, h_sq, sigma_min, seed) {
   mtch <- tryCatch(
     get_cal_matches(data = df, Z ~ X1 + X2,
                     rad_method = "adaptive", scaling = scaling,
-                    k = 2, warn = FALSE, est_method = "scm"),
+                    k = 2, warn = FALSE, est_method = "csm"),
     error = function(e) NULL
   )
   if (is.null(mtch)) return(NULL)

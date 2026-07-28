@@ -374,7 +374,7 @@ cat("\\end{tabular}\n")
 caption8 <- paste0(
   "SATT-oriented $\\hat{V}_E$ coverage for the heteroskedastic and pooled estimators ",
   "across comparable effective sample sizes $\\tilde{N}_C$, for $k=1$, $k=2$, and $k=5$ ",
-  "adaptive-caliper SCM matching. Each row pairs scenarios from the three designs at similar ",
+  "adaptive-caliper CSM matching. Each row pairs scenarios from the three designs at similar ",
   "$\\tilde{N}_C$. Nominal coverage is 0.95."
 )
 cat(sprintf("\\caption{%s}\n", caption8))

@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -J matching_sims
-#SBATCH -o /homes2/xmeng/scmatch2/logs/matching_%A_%a.out
-#SBATCH -e /homes2/xmeng/scmatch2/logs/matching_%A_%a.err
+#SBATCH -o /homes2/xmeng/CSMatch/logs/matching_%A_%a.out
+#SBATCH -e /homes2/xmeng/CSMatch/logs/matching_%A_%a.err
 #SBATCH -c 2
 #SBATCH --mem=4G
 #SBATCH -t 00:30:00
@@ -21,7 +21,7 @@
 #   sbatch --export=ALL,SIMS="toy" scripts/sims-bias_mse/run_slurm_matching.sh
 # ---------------------------------------------------------------------
 
-project_dir="/homes2/xmeng/scmatch2"
+project_dir="/homes2/xmeng/CSMatch"
 module load R/4.3.2
 mkdir -p "${project_dir}/logs"
 cd "${project_dir}" || exit 1
