@@ -29,6 +29,10 @@ library( CSM )
 <!-- badges: end -->
 
 
+# NOTE: This is the 'dev' branch, before major package cleanup
+
+In the cleanup many code stubs for different kinds of inference were deleted. The dev branch has those things in case they are useful someday.
+
 
 # Caliper Synthetic Matching (CSMatch)
 
