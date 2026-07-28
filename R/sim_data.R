@@ -1,8 +1,6 @@
 
 # functions for simulating data
 
-# require(aciccomp2016)
-library(mvtnorm)
 
 # toy example -------------------------------------------------------------
 
@@ -52,6 +50,9 @@ gen_toy_covar <- function(n, X1_ctrs, X2_ctrs, SD) {
 #'   worse overlap
 #'
 #' @return A tibble containing a toy dataset
+#' @examples
+#' dat <- gen_df_adv(nc = 100, nt = 10)
+#' dim(dat)
 #' @export
 #'
 gen_df_adv <- function(nc, nt,
@@ -62,8 +63,6 @@ gen_df_adv <- function(nc, nt,
                        ctr_dist = 0.5,
                        prop_nc_unif = 1/3
 ) {
-  require( tidyverse )
-
   SD <- 0.1
 
   c1 <- 0.5 - ctr_dist/2
@@ -145,7 +144,7 @@ if (F) {
 #' @param k Dimensionality.
 #' @param sd Standard deviation for the blobs (assumed spherical).
 #' @return A tibble with k columns (X1, ..., Xk).
-#'
+#' @noRd
 gen_toy_covar_k <- function(n, centers, k, sd) {
   n_centers <- length(centers)
   # Return empty tibble with correct structure if n=0 or no centers
@@ -204,6 +203,9 @@ gen_toy_covar_k <- function(n, centers, k, sd) {
 #' @param prop_nc_unif Proportion of control units drawn uniformly from the \eqn{[0,1]^k} box.
 #'
 #' @return A tibble containing a k-dimensional toy dataset.
+#' @examples
+#' dat <- gen_df_adv_k(nc = 100, nt = 10, k = 3)
+#' dim(dat)
 #' @export
 #'
 gen_df_adv_k <- function(nc, nt, k, # Added k
@@ -290,6 +292,9 @@ gen_df_adv_k <- function(nc, nt, k, # Added k
 #' @param f0_sd Standard deviation for the noise in the potential outcome function f0. Default is 0.5.
 #'
 #' @return A tibble with the toy dataset
+#' @examples
+#' dat <- gen_one_toy(nt = 5)
+#' dim(dat)
 #' @export
 #'
 gen_one_toy <- function( k = 2, # Added dimensionality parameter k, default 2
@@ -362,6 +367,14 @@ gen_one_toy <- function( k = 2, # Added dimensionality parameter k, default 2
 #' @param sigma_e Error distribution for latent variable dictating
 #'   treatment assignment.
 #' @param outcome Outcome function type
+#' @param sigma_y Standard deviation of the outcome noise (default 1).
+#' @param ATE True average treatment effect added to the outcome
+#'   (default 0).
+#' @return A tibble with covariates, treatment indicator `Z`, and
+#'   outcome `Y`.
+#' @examples
+#' dat <- gen_df_hain(nt = 20, nc = 60)
+#' dim(dat)
 #'
 #' @export
 gen_df_hain <- function(nt = 50,
@@ -442,8 +455,40 @@ gen_df_hain <- function(nt = 50,
 #' input_2016 dataset and then applies the dgp_2016 function to
 #' generate potential outcomes and treatment assignments.
 #'
+#' This function requires the \pkg{aciccomp2016} package, which is not
+#' on CRAN and is not a formal dependency of CSMatch. Install it from
+#' GitHub with \code{remotes::install_github("vdorie/aciccomp/2016")}
+#' before calling this function.
+#'
+#' @param model.trt Functional form for the treatment-assignment model
+#'   (e.g. "step", "linear"); passed to \code{aciccomp2016::dgp_2016()}.
+#' @param root.trt Tuning constant controlling the degree of treatment
+#'   propensity extremity/overlap; passed to
+#'   \code{aciccomp2016::dgp_2016()}.
+#' @param overlap.trt Overlap category for the treatment model (e.g.
+#'   "full", "one-term", "some-overlap"); passed to
+#'   \code{aciccomp2016::dgp_2016()}.
+#' @param model.rsp Functional form for the response-surface model
+#'   (e.g. "linear", "exponential"); passed to
+#'   \code{aciccomp2016::dgp_2016()}.
+#' @param alignment Degree of overlap between the covariates driving
+#'   treatment assignment and those driving the response surface;
+#'   passed to \code{aciccomp2016::dgp_2016()}.
+#' @param te.hetero Level of treatment effect heterogeneity (e.g.
+#'   "high", "med", "none"); passed to \code{aciccomp2016::dgp_2016()}.
+#' @param random.seed Seed passed to \code{aciccomp2016::dgp_2016()}
+#'   for reproducibility of the DGP.
+#' @param n Number of units to sample from the ACIC 2016
+#'   \code{input_2016} covariate pool.
+#' @param p Number of (numeric-like) covariates to keep.
 #' @return A tibble containing the generated dataset with covariates,
 #'   treatment assignment, potential outcomes, and observed outcome.
+#'
+#' @examples
+#' if (requireNamespace("aciccomp2016", quietly = TRUE)) {
+#'   dat <- gen_df_acic(n = 200, p = 5)
+#'   dim(dat)
+#' }
 #'
 #' @export
 gen_df_acic <- function(model.trt="step",
@@ -517,6 +562,9 @@ gen_df_acic <- function(model.trt="step",
 #'
 #' @param n Number of samples to generate
 #' @return A data frame with covariates and outcome
+#' @examples
+#' dat <- gen_df_kang(n = 200)
+#' dim(dat)
 #' @export
 gen_df_kang <- function(n=1000) {
   mvtnorm::rmvnorm(n, mean=rep(0,4), sigma=diag(4)) %>%

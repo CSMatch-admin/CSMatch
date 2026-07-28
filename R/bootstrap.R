@@ -64,8 +64,6 @@
 #'     \item seed_addition - Value added to base seed for reproducibility (default: 123)
 #'   }
 #'
-#' @export
-#'
 #' @examples
 #' # Create bootstrap functions for different methods
 #' bayesian_boot <- make_bootstrap("Bayesian")
@@ -75,7 +73,7 @@
 #'
 #' # Perform bootstrap with Moving Block Bootstrap enabled
 #' mbb_results <- make_bootstrap("Bayesian", use_moving_block = TRUE)(resids, B = 1000, block_size = 5)
-#'
+#' @noRd
 
 make_bootstrap <- function(boot_mtd, use_moving_block = FALSE) {
   force(boot_mtd) # Ensure evaluation
@@ -108,17 +106,13 @@ make_bootstrap <- function(boot_mtd, use_moving_block = FALSE) {
                     stop("Unknown bootstrap method:", boot_mtd)
   )
 
-  #' Bootstrap Resampling Function
-  #'
-  #' @param resids Numeric vector of residuals to bootstrap
-  #' @param B Number of bootstrap iterations
-  #' @param block_size Size of blocks for moving block bootstrap (only
-  #'   used if use_moving_block is TRUE)
-  #' @param seed_addition Value added to base seed for reproducibility
-  #'
-  #' @return Numeric vector of length B containing bootstrap
-  #'   statistics
-  #' @noRd
+  # Returns a bootstrap resampling function with parameters:
+  #   resids        - numeric vector of residuals to bootstrap
+  #   B             - number of bootstrap iterations
+  #   block_size    - block size for moving block bootstrap (required if
+  #                   use_moving_block is TRUE)
+  #   seed_addition - value added to base seed for reproducibility
+  # Returns a numeric vector of length B containing bootstrap statistics.
   function(resids, B, block_size = NULL, seed_addition = 123) {
     n1 <- length(resids)
     T_star <- numeric(B)
@@ -173,7 +167,6 @@ make_bootstrap <- function(boot_mtd, use_moving_block = FALSE) {
 #'     \item ci_upper - Upper bound of confidence interval
 #'     \item sd - Bootstrap standard error
 #'   }
-#' @export
 #'
 #' @examples
 #' # Create bootstrap CI calculator
@@ -186,21 +179,20 @@ make_bootstrap <- function(boot_mtd, use_moving_block = FALSE) {
 #' # Calculate CIs and SE
 #' results <- bayesian_ci(resids, mean_est, B = 1000, block_size = 5)
 #' print(c(results$ci_lower, results$ci_upper, results$sd))
-#'
+#' @noRd
 
 make_bootstrap_ci <- function(boot_mtd, use_moving_block = FALSE) {
   # First create the base bootstrap sampler
   bootstrap_sampler <- make_bootstrap(boot_mtd, use_moving_block)
 
-  #' Bootstrap Confidence Interval Calculator
-  #'
-  #' @param resids Numeric vector of residuals to bootstrap
-  #' @param mean_est Point estimate around which to construct intervals
-  #' @param B Number of bootstrap iterations
-  #' @param block_size Size of blocks for moving block bootstrap (only used if use_moving_block is TRUE)
-  #' @param seed_addition Value added to base seed for reproducibility
-  #'
-  #' @return List containing ci_lower, ci_upper, and sd
+  # Returns a bootstrap confidence-interval calculator with parameters:
+  #   resids        - numeric vector of residuals to bootstrap
+  #   mean_est      - point estimate around which to construct intervals
+  #   B             - number of bootstrap iterations
+  #   block_size    - block size for moving block bootstrap (required if
+  #                   use_moving_block is TRUE)
+  #   seed_addition - value added to base seed for reproducibility
+  # Returns a list containing ci_lower, ci_upper, and sd.
   function(resids, mean_est, B, block_size = NULL, seed_addition = 123) {
     # Validate input
     if (!is.numeric(resids) || !is.numeric(mean_est) || !is.numeric(B)) {
@@ -225,15 +217,30 @@ make_bootstrap_ci <- function(boot_mtd, use_moving_block = FALSE) {
 #'
 #' This is the main bootstrap function.
 #'
-#' @param matches_table The data frame of the matched table
+#' @param matches_table The data frame of the matched table, or a
+#'   csm_matches object (converted internally via
+#'   \code{\link{result_table}()}).
 #' @param outcome Name of the outcome variable (default "Y")
 #' @param treatment Name of the treatment variable (default "Z")
-#' @param var_weight_type The way that cluster variances are averaged
-#'   "num_units": weight by number of units in the subclass
-#'   "ess_units": weight effective size of units in the subclass
-#'   "uniform: weight each cluster equally.
+#' @param B Number of bootstrap resamples (default 100).
+#' @param boot_mtd Bootstrap resampling method: one of "Bayesian",
+#'   "wild", "sign" (default), or "naive".
 #'
-#' @return A tibble with SE, sigma_hat, N_T, and N_C_tilde
+#' @return A tibble with columns \code{SE_unif_weight} and
+#'   \code{SE_SCM_weight}, the bootstrap standard errors of the ATT
+#'   under uniform (CEM-style) and CSM synthetic-control weighting,
+#'   respectively.
+#'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 20)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' boot_SE(mtch, B = 50)
 #'
 #' @export
 boot_SE <- function(
@@ -273,17 +280,16 @@ boot_SE <- function(
       )
 
   # Step 3: bootstrap residuals.
-  # B = 100
-  booted_unif_weight <- boot_by_resids(
+  resample <- make_bootstrap(boot_mtd)
+
+  booted_unif_weight <- resample(
     resids = ATT_residuals$residual_unif,
-    B = B,
-    boot_mtd = boot_mtd
+    B = B
   )
 
-  booted_SCM_weight <- boot_by_resids(
+  booted_SCM_weight <- resample(
     resids = ATT_residuals$residual_SCM,
-    B = B,
-    boot_mtd = boot_mtd
+    B = B
   )
 
   return(tibble(

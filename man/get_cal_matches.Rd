@@ -117,6 +117,5 @@ as.data.frame(mtch)
 }
 \seealso{
 \code{\link{gen_matches}} for the underlying matching
-function, \code{\link{est_weights}} for weight calculation,
-\code{\link{result_table}} for extracting results
+function, \code{\link{result_table}} for extracting results
 }

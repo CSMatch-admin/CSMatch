@@ -22,6 +22,15 @@ gen_df_hain(
 treatment assignment.}
 
 \item{outcome}{Outcome function type}
+
+\item{sigma_y}{Standard deviation of the outcome noise (default 1).}
+
+\item{ATE}{True average treatment effect added to the outcome
+(default 0).}
+}
+\value{
+A tibble with covariates, treatment indicator \code{Z}, and
+outcome \code{Y}.
 }
 \description{
 note: generates a big population and samples nt/nco units paper
@@ -33,4 +42,9 @@ settings:
 \item outcome: "linear", "nl1", "nl2"
 \item sigma_y: 1
 }
+}
+\examples{
+dat <- gen_df_hain(nt = 20, nc = 60)
+dim(dat)
+
 }

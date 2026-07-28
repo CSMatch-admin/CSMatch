@@ -15,3 +15,7 @@ The effective sample size
 \description{
 Calculate the effective sample size given a vector of unit weights
 }
+\examples{
+ess(c(1, 1, 1, 1))
+ess(c(1, 0.5, 0.5))
+}

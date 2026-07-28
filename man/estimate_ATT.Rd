@@ -35,6 +35,15 @@ columns).}
 variance estimator via \code{get_total_variance()}.  If FALSE,
 use the finite-sample estimator via \code{get_finite_variance()}.}
 
+\item{homoskedastic}{Passed to \code{get_finite_variance()} when
+\code{superpopulation = FALSE}; if TRUE, assume treated and
+control units share a common variance.}
+
+\item{use_common_variance}{Passed to \code{get_finite_variance()}
+when \code{superpopulation = FALSE}; if TRUE (default), estimate
+S1^2 from control-side subclass variances rather than
+treated-to-treated K-NN matching.}
+
 \item{var_weight_type}{How cluster variances are averaged (default
 "ess_units"): "num_units" weights by number of units in the
 subclass; "ess_units" weights by effective sample size; "uniform"
@@ -42,8 +51,9 @@ weights each cluster equally.}
 
 \item{variance_method}{Variance method passed to
 \code{get_total_variance()}: "pooled" (default), "pooled_het",
-"bootstrap", or "ai06".  Ignored when \code{superpopulation =
-  FALSE}.}
+"bootstrap", or "ai06" (\strong{incomplete}, not yet implemented in
+this release; will error if selected). Ignored when
+\code{superpopulation = FALSE}.}
 
 \item{boot_mtd}{Bootstrap method when variance_method = "bootstrap"
 (default: "wild").}
@@ -82,4 +92,16 @@ variance estimator.
 This will implement both finite-sample and superpopulation variance
 estimation.  For superpopulation inference, it can also do the OR
 bootstrap, if specified.
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+estimate_ATT(mtch, outcome = "Y")
+
 }

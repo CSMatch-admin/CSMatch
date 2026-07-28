@@ -6,10 +6,25 @@
 \usage{
 feasible_units(csm)
 }
+\arguments{
+\item{csm}{A csm_matches object.}
+}
 \value{
 Dataframe of all the treated units (not controls) that were
 matched within a caliper.
 }
 \description{
 Return those treated units with controls within the set caliper.
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+feasible_units(mtch)
+
 }

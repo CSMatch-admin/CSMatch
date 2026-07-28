@@ -1,4 +1,7 @@
 # tests/testthat/test-sim_runner.R
+if (!file.exists(here::here("scripts/lib/sim_runner.R"))) {
+  skip("scripts/ is not part of the installed package (paper-replication code only)")
+}
 source(here::here("scripts/lib/wrappers.R"))
 source(here::here("scripts/lib/sim_runner.R"))
 

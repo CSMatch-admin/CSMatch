@@ -24,6 +24,10 @@ no line.}
 
 \item{target_percentile}{Optional target percentile for caliper,
 which will calculate caliper to achieve.}
+
+\item{target_k}{Which of the values in \code{tops} to use when computing
+the caliper for \code{target_percentile} (default 1, the nearest
+neighbor).}
 }
 \value{
 The plot with some extra attributes.  First is "distances",
@@ -35,4 +39,16 @@ caliper value used.
 \description{
 Plot distribution of distances between treated units and their
 kth-nearest neighbors in the control group, for a set of k values.
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+caliper_distance_plot(mtch, tops = c(1, 2, 3), target_percentile = 0.8)
+
 }

@@ -21,7 +21,7 @@ knitr::opts_chunk$set(echo = TRUE,
 options(list(dplyr.summarise.inform = FALSE))
 theme_set( theme_classic() )
 
-library( CSM )
+library( CSMatch )
 ```
 
 
@@ -42,7 +42,7 @@ The GitHub repo also has replication materials for the associated paper in the `
 
 ## Installation
 
-You can install the development version of CSM from [GitHub](https://github.com/) with:
+You can install the development version of CSMatch from [GitHub](https://github.com/) with:
 
 ```
 # install.packages("devtools")  # (if needed)

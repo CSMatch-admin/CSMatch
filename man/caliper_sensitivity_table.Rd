@@ -51,6 +51,13 @@ to the different plot methods without recalculating everything.}
 \item{data}{The data the csm_matches object was fit to. (One could
 put in alternate data here, if the covariates aligned.)}
 
+\item{outcome}{Name of the outcome column to use for ATT estimates.
+Required unless \code{csm} already carries a cached sensitivity table.}
+
+\item{include_distances}{If TRUE, include columns summarizing the
+distance between treated units and their matched/synthetic
+controls (mean/median distance, etc.) at each caliper.}
+
 \item{min_cal}{Minimum caliper to try}
 
 \item{max_cal}{Maximum caliper to try}
@@ -61,9 +68,17 @@ put in alternate data here, if the covariates aligned.)}
 for.}
 
 \item{lines}{Which estimates to show as lines on the plot.}
+
+\item{vars}{Which columns of the sensitivity table to plot as
+separate facets (default ESS_C, mean_dist, SE_star).}
 }
 \value{
 A tibble of results.
+
+A ggplot object, with the underlying sensitivity table
+attached as the \code{"table"} attribute.
+
+A ggplot object faceted by \code{vars}.
 }
 \description{
 To generate the sensitivity table, method will run caliper from a
@@ -82,4 +97,41 @@ are shown for different ATT estimates.
 
 \code{caliper_sensitivity_plot_stats()} makes an augmented plot
 from sensitivity plot showing ATT, SE and ESS
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+cal_sens_tbl <- caliper_sensitivity_table(mtch, dat, outcome = "Y",
+                                          R = 5, min_cal = 0.1, max_cal = 2)
+cal_sens_tbl
+
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+caliper_sensitivity_plot(mtch, dat, outcome = "Y",
+                         R = 5, min_cal = 0.1, max_cal = 2,
+                         focus = "ATT")
+
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+caliper_sensitivity_plot_stats(mtch, dat, outcome = "Y",
+                               R = 5, min_cal = 0.1, max_cal = 2)
+
 }

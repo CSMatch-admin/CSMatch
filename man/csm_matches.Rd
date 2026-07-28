@@ -6,7 +6,7 @@
 \alias{[[.csm_matches}
 \alias{dim.csm_matches}
 \alias{as.data.frame.csm_matches}
-\title{Dimension of csm_matches object}
+\title{csm_matches object accessors}
 \usage{
 is.csm_matches(x)
 
@@ -19,6 +19,8 @@ is.csm_matches(x)
 \method{as.data.frame}{csm_matches}(x, row.names = NULL, optional = FALSE, return = "all", ...)
 }
 \arguments{
+\item{x}{A csm_matches object.}
+
 \item{...}{additional arguments to be passed to the
 as.data.frame.list methods.  (Currently ignored.)}
 
@@ -27,6 +29,9 @@ for the data frame.}
 
 \item{optional}{logical. If TRUE, setting row names and converting
 column names is optional. (Currently ignored.)}
+
+\item{return}{Which return format to use; passed to
+\code{\link{result_table}()}.}
 }
 \value{
 is.csm_matches: TRUE if object is a csm_matches object.
@@ -41,7 +46,20 @@ as.data.frame: The matched data as a clean dataframe (no
 more attributes from csm_matches).
 }
 \description{
-Dimension of csm_matches object
+Methods for working with a \code{csm_matches} object as if it were
+a data frame of matched units.
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+is.csm_matches(mtch)
+dim(mtch)
+head(mtch[, c("id", "X1", "X2")])
 
-Cast csm_matches to data.frame
 }

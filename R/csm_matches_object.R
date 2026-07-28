@@ -3,7 +3,26 @@
 
 
 
+#' csm_matches object accessors
+#'
+#' Methods for working with a \code{csm_matches} object as if it were
+#' a data frame of matched units.
+#'
+#' @param x A csm_matches object.
 #' @return is.csm_matches: TRUE if object is a csm_matches object.
+#'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' is.csm_matches(mtch)
+#' dim(mtch)
+#' head(mtch[, c("id", "X1", "X2")])
 #'
 #' @export
 #'
@@ -58,6 +77,8 @@ dim.csm_matches <- function(x, ... )
 #'   for the data frame.
 #' @param optional logical. If TRUE, setting row names and converting
 #'   column names is optional. (Currently ignored.)
+#' @param return Which return format to use; passed to
+#'   \code{\link{result_table}()}.
 #' @param ... additional arguments to be passed to the
 #'   as.data.frame.list methods.  (Currently ignored.)
 #'
@@ -81,6 +102,19 @@ as.data.frame.csm_matches <- function(
 
 #' Print method for csm_matches object
 #' @param x object to print
+#' @param ... Extra arguments (currently ignored).
+#' @return None, called for side effects (prints a summary to the
+#'   console).
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' print(mtch)
 #' @export
 print.csm_matches <- function(x, ...) {
   ntx = length( x$adacalipers )
@@ -162,24 +196,39 @@ print.csm_matches <- function(x, ...) {
 
 
 #' Summary method for csm_matches object
-#' @param x object to summarize
+#' @param object A csm_matches object to summarize
+#' @param outcome Optional name of an outcome column; if given, also
+#'   reports the ATT estimate for that outcome.
 #' @param ... Extra arguments (currently ignored).
+#' @return Invisibly, a list with the csm_matches object (`csm`), the
+#'   ATT estimate table if `outcome` was given (`att`), and a table of
+#'   subclass sizes (`subclass_sizes`).
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' summary(mtch, outcome = "Y")
 #' @export
-summary.csm_matches <- function(x, outcome = NULL, ... ) {
+summary.csm_matches <- function(object, outcome = NULL, ... ) {
 
-  print.csm_matches(x)
+  print.csm_matches(object)
 
-  rs = result_table(x)
+  rs = result_table(object)
 
   if ( nrow(rs) == 0 ) {
     cat( "No matches were made.\n" )
     return( invisible(
-      list( csm = x,
+      list( csm = object,
             att = NA,
-            subclass_sizes = c( `0`= length(x$adacalipers) ) ) ) )
+            subclass_sizes = c( `0`= length(object$adacalipers) ) ) ) )
   }
 
-  tx_var = attr( x, "settings" )$treatment
+  tx_var = attr( object, "settings" )$treatment
   rsC = filter( rs, .data[[tx_var]] == 0 )
 
   nunique1 = length( unique( rsC$id ) )
@@ -189,9 +238,9 @@ summary.csm_matches <- function(x, outcome = NULL, ... ) {
 
   att = NULL
   if ( !is.null( outcome ) ) {
-    stopifnot( outcome %in% names(x$matches[[1]]) )
+    stopifnot( outcome %in% names(object$matches[[1]]) )
     cat( "ATT estimates and sample sizes:\n" )
-    att <- estimate_ATT(x, outcome=outcome) %>%
+    att <- estimate_ATT(object, outcome=outcome) %>%
       dplyr::select( -any_of( c("V","V_E","V_P" ) ) ) %>%
       as.data.frame()
     att %>%
@@ -232,12 +281,12 @@ summary.csm_matches <- function(x, outcome = NULL, ... ) {
   print( tb )
 
   cat( "Summary of aggregated control weights\n" )
-  rs2 = result_table( x, return = "agg_co_units" ) %>%
+  rs2 = result_table( object, return = "agg_co_units" ) %>%
     filter( weights > 0.000000001 )
   print( summary( rs2$weights ) )
 
   return( invisible( list(
-    csm = x,
+    csm = object,
     att = att,
     subclass_sizes = tbtb
   ) ) )
@@ -247,6 +296,20 @@ summary.csm_matches <- function(x, outcome = NULL, ... ) {
 
 #' Return table of calipers for all treated units
 #'
+#' @param csm A csm_matches object.
+#' @return Dataframe with one row per treated unit, giving its
+#'   subclass, feasibility, matched-control distance range, and
+#'   adaptive caliper.
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' caliper_table(mtch)
 #' @export
 caliper_table <- function( csm ) {
   csm$treatment_table %>%
@@ -258,8 +321,20 @@ caliper_table <- function( csm ) {
 #'
 #' Return those treated units with controls within the set caliper.
 #'
+#' @param csm A csm_matches object.
 #' @return Dataframe of all the treated units (not controls) that were
 #'   matched within a caliper.
+#'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' feasible_units(mtch)
 #'
 #' @export
 feasible_units <- function( csm ) {
@@ -276,7 +351,19 @@ feasible_units <- function( csm ) {
 #' subclass IDs (i.e., the ids that link controls to treated units in
 #' matched clusters).
 #'
-#' @return Numeric vector of IDs
+#' @param csm A csm_matches object.
+#' @return Character vector of subclass IDs.
+#'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' feasible_unit_subclass(mtch)
 #'
 #' @export
 feasible_unit_subclass <- function( csm ) {
@@ -288,7 +375,19 @@ feasible_unit_subclass <- function( csm ) {
 
 #' Obtain table of treated units that were not matched
 #'
+#' @param csm A csm_matches object.
 #' @return dataframe, one row per treated unit.
+#'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' unmatched_units(mtch)
 #'
 #' @export
 unmatched_units <- function( csm ) {
@@ -309,6 +408,16 @@ unmatched_units <- function( csm ) {
 #'   subclass, max_dist, outcome (estimated impact), precision
 #'   (nominal precision of the impact estimate, calculated as 1/(1 +
 #'   1/ess_C), nC (number of controls used).
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' impact_table(mtch, outcome = "Y")
 #' @export
 #'
 #'
@@ -340,6 +449,13 @@ impact_table <- function( csm, outcome ) {
 #' with only one row per control unit (agg_co_units).
 #'
 #' @param csm A csm_matches object from a matching call.
+#' @param outcome Optional name of an outcome column, passed through
+#'   to the aggregation function selected by `return` (e.g.
+#'   \code{\link{agg_sc_units}}) when `return` is "sc_units" or
+#'   "agg_co_units".
+#' @param id Optional character vector of treated-unit ids; if given,
+#'   restrict the result to these treated units (and their matched
+#'   controls).
 #' @param feasible_only TRUE means only return treated units and
 #'   matched controls for units that could be matched without
 #'   expanding the caliper.
@@ -356,6 +472,17 @@ impact_table <- function( csm, outcome ) {
 #'
 #' @return dataframe of the treatment and control units.  This
 #'   dataframe can be analyzed as an as-if experimental dataset.
+#'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' result_table(mtch, nonzero_weight_only = TRUE)
 #'
 #' @export
 #'
@@ -449,8 +576,17 @@ full_unit_table <- function(csm,
 
 #' Update a matching call to change some parameters
 #'
+#' Refits [get_cal_matches()] on `data` reusing all settings (metric,
+#' scaling, treatment, covariates, etc.) stored on `res`, except for
+#' any settings overridden via `...`.
+#'
 #' @param res A csm_matches object
-#' @param ... Parameters to change in the matching call
+#' @param data The data frame to rematch (typically the same data
+#'   originally passed to [get_cal_matches()])
+#' @param warn A logical indicating whether to warn about dropped
+#'   units (passed through to [get_cal_matches()])
+#' @param ... Parameters to change in the matching call, e.g.
+#'   `caliper` or `rad_method`
 #' @return A new csm_matches object with updated parameters
 #'
 #' @examples
@@ -469,7 +605,7 @@ full_unit_table <- function(csm,
 #' # View matching results
 #' mtch
 #'
-#' update_matches( mtch, caliper = 0.05, rad_method = "fixed" )
+#' update_matches( mtch, dat, caliper = 0.5, rad_method = "fixed" )
 #'
 #' @export
 update_matches <- function( res, data, warn = TRUE, ... ) {
@@ -501,6 +637,16 @@ update_matches <- function( res, data, warn = TRUE, ... ) {
 #'
 #' @param csm A csm_matches object
 #' @return A list of the settings used in the matching call
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' params(mtch)
 #' @export
 params <- function( csm ) {
   params = attr( csm, "settings" )
@@ -524,13 +670,24 @@ params <- function( csm ) {
 #'
 #' @return Dataframe of treated units
 #'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' treatment_table(mtch)
+#'
 #' @export
 treatment_table <- function( csm, id = NULL, threshold = NULL,
                              bad = FALSE ) {
   tt <- csm$treatment_table
   if ( !is.null( id ) ) {
     tt <- tt %>%
-      filter( id %in% id )
+      filter( .data$id %in% .env$id )
   }
   if ( bad || !is.null( threshold ) ) {
     if ( bad ) {
@@ -560,6 +717,16 @@ treatment_table <- function( csm, id = NULL, threshold = NULL,
 #'   weight (e.g., due to csm weighting)
 #'
 #' @return Dataframe of bad matches
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' bad_matches(mtch, threshold = 0.9)
 #' @export
 bad_matches <- function( csm, threshold,
                          nonzero_weight_only = TRUE ) {

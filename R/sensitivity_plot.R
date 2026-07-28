@@ -21,7 +21,28 @@
 #'
 #' @param csm A csm_matches object
 #' @param outcome Name of outcome variable in data
-#' @return A tibble with the four ATT estimates and standard errors
+#' @param feasible_only If TRUE, also restrict the "ATT"/"ATT_1nn"/
+#'   "ATT_raw" rows to feasible treated units only (in addition to the
+#'   "FATT" rows, which are always feasible-only).
+#' @param include_variances If TRUE, include the individual variance
+#'   components (e.g. \code{V}, \code{V_E}, \code{V_P}) for each
+#'   estimate, not just the standard error.
+#' @param include_distances If TRUE, include columns summarizing the
+#'   distance between each treated unit and its matched/synthetic
+#'   control (mean/median distance, and pseudo-SE/bias ratios relative
+#'   to the raw-average estimate).
+#' @return A tibble with the estimates and standard errors
+#'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' sensitivity_table(mtch, outcome = "Y")
 #'
 #' @export
 sensitivity_table <- function( csm,
@@ -185,11 +206,29 @@ sensitivity_table <- function( csm,
 #'   to the different plot methods without recalculating everything.
 #' @param data The data the csm_matches object was fit to. (One could
 #'   put in alternate data here, if the covariates aligned.)
+#' @param outcome Name of the outcome column to use for ATT estimates.
+#'   Required unless `csm` already carries a cached sensitivity table.
+#' @param include_distances If TRUE, include columns summarizing the
+#'   distance between treated units and their matched/synthetic
+#'   controls (mean/median distance, etc.) at each caliper.
 #' @param min_cal Minimum caliper to try
 #' @param max_cal Maximum caliper to try
 #' @param R Number of calipers to try between min and max
 #'
 #' @return A tibble of results.
+#'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' cal_sens_tbl <- caliper_sensitivity_table(mtch, dat, outcome = "Y",
+#'                                           R = 5, min_cal = 0.1, max_cal = 2)
+#' cal_sens_tbl
 #'
 #' @export
 caliper_sensitivity_table <- function( csm,
@@ -288,6 +327,22 @@ sens_table_legend <- function() {
 #'   for.
 #' @param lines Which estimates to show as lines on the plot.
 #'
+#' @return A ggplot object, with the underlying sensitivity table
+#'   attached as the `"table"` attribute.
+#'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' caliper_sensitivity_plot(mtch, dat, outcome = "Y",
+#'                          R = 5, min_cal = 0.1, max_cal = 2,
+#'                          focus = "ATT")
+#'
 #' @export
 caliper_sensitivity_plot <- function( csm,
                                       data,
@@ -358,7 +413,22 @@ caliper_sensitivity_plot <- function( csm,
 #' @details `caliper_sensitivity_plot_stats()` makes an augmented plot
 #' from sensitivity plot showing ATT, SE and ESS
 #'
-#' @inheritParams caliper_sensitivity_plot
+#' @param vars Which columns of the sensitivity table to plot as
+#'   separate facets (default ESS_C, mean_dist, SE_star).
+#'
+#' @return A ggplot object faceted by `vars`.
+#'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' caliper_sensitivity_plot_stats(mtch, dat, outcome = "Y",
+#'                                R = 5, min_cal = 0.1, max_cal = 2)
 #'
 #' @export
 caliper_sensitivity_plot_stats <- function( csm,
@@ -444,6 +514,8 @@ make_tx_axis <- function( ntxes ) {
 #' treated units).
 #'
 #' @param csm A csm_matches object
+#' @param outcome Name of the outcome column to use for the cumulative
+#'   ATT estimate (default "Y").
 #' @param return_table If TRUE, return the full table of results
 #'   instead of a plot
 #' @param caliper_plot If TRUE, return a plot of maximum caliper size
@@ -451,6 +523,17 @@ make_tx_axis <- function( ntxes ) {
 #'   plots, along with the table itself.
 #' @return A ggplot object showing the feasible plot, or a table of
 #'   results if return_table is TRUE.
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' feasible_plot(mtch, outcome = "Y")
+#'
 #' @export
 feasible_plot <- function( csm,
                            outcome = "Y",

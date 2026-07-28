@@ -3,6 +3,9 @@
 # Tests for scripts/sims-variance-het-sigma/
 # Integration tests gated by RUN_SLOW_TESTS=TRUE (see helper-skip.R).
 
+if (!file.exists(here::here("scripts/sims-variance-het-sigma/0_sim_inference_utils.R"))) {
+  skip("scripts/ is not part of the installed package (paper-replication code only)")
+}
 source(here::here("scripts/sims-variance-het-sigma/0_sim_inference_utils.R"))
 
 # -------------------------------------------------------------------

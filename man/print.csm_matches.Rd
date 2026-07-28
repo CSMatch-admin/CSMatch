@@ -8,7 +8,24 @@
 }
 \arguments{
 \item{x}{object to print}
+
+\item{...}{Extra arguments (currently ignored).}
+}
+\value{
+None, called for side effects (prints a summary to the
+console).
 }
 \description{
 Print method for csm_matches object
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+print(mtch)
 }

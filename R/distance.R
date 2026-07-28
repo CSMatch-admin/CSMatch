@@ -1,6 +1,5 @@
 
 # functions for working with the distance metric
-library(tidyverse)
 
 
 
@@ -13,11 +12,10 @@ library(tidyverse)
 #'   If these are scaled by K >> 1, and caliper is less than 1, then
 #'   this will enforce exact matching on the category.
 #'
-#' @export
-#'
 #' @examples
 #' data = data.frame( A = c( "A", "B", "A", "C" ) )
 #' coerce_covs( data )
+#' @noRd
 coerce_covs <- function(covs) {
   # TODO: Change this to using model.matrix to make dummy variables
 
@@ -36,9 +34,7 @@ coerce_covs <- function(covs) {
 #' @param scaling A vector of length = ncol(covs), or a scalar
 #'
 #' @return Scaled matrix of same dimension as covs
-#'
-#' @export
-#'
+#' @noRd
 scale_covs <- function(covs, scaling){
   p <- ncol(covs)
   len_scaling <- length(scaling)
@@ -78,8 +74,7 @@ scale_covs <- function(covs, scaling){
 #' Default is c("maximum", "euclidean", "manhattan")
 #'
 #' @return (#tx) by (#co) distance matrix
-#'
-#' @export
+#' @noRd
 gen_dm <- function(data,
                    covs = get_x_vars(data),
                    treatment = "Z",

@@ -55,13 +55,6 @@ For "knn", number of neighbors. Defaults to 1.}
 applied but distances are not recomputed.}
 
 \item{...}{Extra arguments}
-
-\item{est_method}{How to weight control units:
-\itemize{
-\item "csm": synthetic control weights
-\item "csm_extrap": CSM with extrapolation
-\item "average": simple average
-}}
 }
 \value{
 A list of results.  matches: list of small datasets of

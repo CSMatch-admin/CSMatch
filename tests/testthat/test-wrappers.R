@@ -1,4 +1,7 @@
 # tests/testthat/test-wrappers.R
+if (!file.exists(here::here("scripts/lib/wrappers.R"))) {
+  skip("scripts/ is not part of the installed package (paper-replication code only)")
+}
 source(here::here("scripts/lib/wrappers.R"))
 
 ## Make some data to test on ----

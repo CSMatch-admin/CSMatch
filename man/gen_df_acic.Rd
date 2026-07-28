@@ -16,6 +16,37 @@ gen_df_acic(
   p = 10
 )
 }
+\arguments{
+\item{model.trt}{Functional form for the treatment-assignment model
+(e.g. "step", "linear"); passed to \code{aciccomp2016::dgp_2016()}.}
+
+\item{root.trt}{Tuning constant controlling the degree of treatment
+propensity extremity/overlap; passed to
+\code{aciccomp2016::dgp_2016()}.}
+
+\item{overlap.trt}{Overlap category for the treatment model (e.g.
+"full", "one-term", "some-overlap"); passed to
+\code{aciccomp2016::dgp_2016()}.}
+
+\item{model.rsp}{Functional form for the response-surface model
+(e.g. "linear", "exponential"); passed to
+\code{aciccomp2016::dgp_2016()}.}
+
+\item{alignment}{Degree of overlap between the covariates driving
+treatment assignment and those driving the response surface;
+passed to \code{aciccomp2016::dgp_2016()}.}
+
+\item{te.hetero}{Level of treatment effect heterogeneity (e.g.
+"high", "med", "none"); passed to \code{aciccomp2016::dgp_2016()}.}
+
+\item{random.seed}{Seed passed to \code{aciccomp2016::dgp_2016()}
+for reproducibility of the DGP.}
+
+\item{n}{Number of units to sample from the ACIC 2016
+\code{input_2016} covariate pool.}
+
+\item{p}{Number of (numeric-like) covariates to keep.}
+}
 \value{
 A tibble containing the generated dataset with covariates,
 treatment assignment, potential outcomes, and observed outcome.
@@ -25,4 +56,17 @@ This function generates a dataset using the data generating process
 from the ACIC 2016 competition. It samples covariates from the
 input_2016 dataset and then applies the dgp_2016 function to
 generate potential outcomes and treatment assignments.
+}
+\details{
+This function requires the \pkg{aciccomp2016} package, which is not
+on CRAN and is not a formal dependency of CSMatch. Install it from
+GitHub with \code{remotes::install_github("vdorie/aciccomp/2016")}
+before calling this function.
+}
+\examples{
+if (requireNamespace("aciccomp2016", quietly = TRUE)) {
+  dat <- gen_df_acic(n = 200, p = 5)
+  dim(dat)
+}
+
 }

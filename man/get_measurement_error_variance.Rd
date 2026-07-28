@@ -31,3 +31,14 @@ Calculates the measurement error variance component using the pooled variance
 approach described in the paper. This estimates the variance component
 due to the noise in outcomes.
 }
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+get_measurement_error_variance(result_table(mtch), outcome = "Y")
+}

@@ -33,6 +33,10 @@ get_finite_variance(
 control-side subclass variances (assuming sigma_1(x)=sigma_0(x)).
 If FALSE, estimate S1^2 via treated-to-treated K-NN matching.}
 
+\item{homoskedastic}{If TRUE, assume a single common variance
+across treated and control units, setting S1^2 = S0^2 (only used
+when \code{use_common_variance = TRUE}).}
+
 \item{K}{Number of treated neighbours for the treated-to-treated step
 (used only when \code{use_common_variance = FALSE}).}
 
@@ -62,7 +66,7 @@ Implements the plug-in estimator
 hat_V = S1^2 / n_T  +  S0^2 / ESS(C)
 where S0^2 is the w_j^2-weighted average of s_j^2 across control units, and
 S1^2 is either the simple average of s_t^2 (common-variance assumption) or
-the average of s_{1t}^2 from treated-to-treated K-NN matching.
+the average of s_1t^2 from treated-to-treated K-NN matching.
 }
 \details{
 Also returns the estimated empirical covariance Cov_p(w_j, s_j^2)
@@ -71,4 +75,15 @@ which goes with the alternate formulation of:
 hat_V_alt = S^2*(1/n_T + 1/ESS_C) + (1/n_T)*Cov_p(w_j, s_j^2)
 
 where S is a pooled estimate of S1 and S0
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+get_finite_variance(mtch, outcome = "Y")
 }

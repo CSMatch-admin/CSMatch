@@ -79,6 +79,9 @@ calc_N_T_N_C <- function(preds_csm, treatment = "Z"){
 #'
 #' @param weights A numeric vector of weights
 #' @return The effective sample size
+#' @examples
+#' ess(c(1, 1, 1, 1))
+#' ess(c(1, 0.5, 0.5))
 #' @export
 #'
 ess <- function( weights ) {
@@ -90,6 +93,7 @@ ess <- function( weights ) {
 #' @param matches_filtered The filtered matched object
 #' @param outcome Name of the outcome variable (default "Y")
 #' @return A data frame with subclass variances
+#' @noRd
 calculate_subclass_variances <-
   function(matches_filtered, outcome = "Y") {
     matches_filtered %>%
@@ -114,6 +118,7 @@ calculate_subclass_variances <-
 #' "ess_units": weight effective size of units in the subclass
 #' "uniform: weight each cluster equally
 #' @return Weighted average of subclass variances
+#' @noRd
 calculate_weighted_variance <-
   function(cluster_var_df,
            var_weight_type = "num_units") {
@@ -252,6 +257,16 @@ get_pooled_variance <- function(
 #' @param block_size Block size for bootstrap (default: NA, automatically chosen)
 #'
 #' @return A tibble with measurement error variance (V_E), standard error (SE), bootstrap confidence intervals, and sample sizes.
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' get_measurement_error_variance_OR(mtch, outcome = "Y", B = 20)
 #' @export
 #'
 get_measurement_error_variance_OR <- function(matches,
@@ -335,6 +350,16 @@ get_measurement_error_variance_OR <- function(matches,
 #'   "ess_units": weight by effective sample size of units in the subclass
 #'   "uniform": weight each cluster equally
 #' @return A tibble with measurement error variance (V_E), sigma_hat, N_T, and ESS_C
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' get_measurement_error_variance(result_table(mtch), outcome = "Y")
 #' @export
 get_measurement_error_variance <- function(
     matches_table,
@@ -377,8 +402,20 @@ get_measurement_error_variance <- function(
 #' @param matches_table The data frame of the matched table (e.g., output from `full_unit_table`)
 #' @param outcome Name of the outcome variable (default "Y")
 #' @param treatment Name of the treatment variable (default "Z")
+#' @param cluster_comb_mtd How per-subclass variances are combined
+#'   across subclasses (default "sample").
 #'
 #' @return A tibble with measurement error variance (V_E), pooled sigma_hat, N_T, and ESS_C
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 20)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' get_measurement_error_variance_het(result_table(mtch), outcome = "Y")
 #' @export
 get_measurement_error_variance_het <- function(
     matches_table,
@@ -487,12 +524,31 @@ get_measurement_error_variance_het <- function(
 #'   "pooled": use get_measurement_error_variance (default).
 #'   "bootstrap": use get_measurement_error_variance_OR.
 #'   "pooled_het": allow for heterogeneity.
-#'   "ai06": the estimator of Abadie and Imbens.
+#'   "ai06": the estimator of Abadie and Imbens. **Incomplete:** this
+#'   option is not yet implemented in this release (it calls an
+#'   internal helper, `get_variance_AI06()`, that does not currently
+#'   exist) and will error if selected.
 #' @param boot_mtd Bootstrap method when variance_method = "bootstrap" (default: "wild")
 #' @param B Number of bootstrap samples when variance_method = "bootstrap" (default: 250)
 #' @param seed_addition Additional seed for bootstrap (default: 11)
+#' @param cluster_comb_mtd How per-subclass variances are combined
+#'   when \code{variance_method = "pooled_het"} (default "average").
+#' @param df The *full* original data frame. Required when
+#'   \code{variance_method = "ai06"}.
+#' @param ... Additional arguments passed to the chosen variance
+#'   estimator; e.g. \code{M} when \code{variance_method = "ai06"}.
 #' @return A tibble with total variance (V), measurement error variance (V_E),
 #'   population heterogeneity variance (V_P), and other relevant statistics
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 20)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' get_total_variance(mtch, outcome = "Y")
 #' @export
 get_total_variance <- function(
     matches,
@@ -559,33 +615,36 @@ get_total_variance <- function(
     N_T <- v_e_result$N_T
     ESS_C <- v_e_result$ESS_C
   } else if (variance_method == "ai06") {
-    if (is.null(df)) {
-      stop("The 'ai06' variance_method requires the full 'df' argument.")
-    }
-    if (is.null(extra_args$M)) {
-      stop("The 'ai06' variance_method requires the 'M' argument.")
-    }
 
-    v_e_result_list <- get_variance_AI06(
-      df = df,
-      scmatch = matches, # Pass the original S3 object
-      outcome = outcome,
-      treatment = treatment,
-      ... # Pass M, covs, scaling, metric, etc.
-    )
+    stop( "The ai06 variance method is not implemented in this release." )
 
-    # Unpack complex object
-    v_e_result <- v_e_result_list %>%
-      dplyr::select(-var_calc_df)
-
-
-    V_E <- v_e_result_list$V_E
-    sigma_hat_squared <- v_e_result_list$sigma_hat^2
-    N_T <- v_e_result_list$N_T
-    ESS_C <- v_e_result_list$ESS_C
-    var_calc_df <- v_e_result_list$var_calc_df[[1]]
-    # var_calc_df <- v_e_result_list$var_calc_df # Extract the data frame
-    v_e_result <- v_e_result_list # for sigma_hat lookup later
+    # if (is.null(df)) {
+    #   stop("The 'ai06' variance_method requires the full 'df' argument.")
+    # }
+    # if (is.null(extra_args$M)) {
+    #   stop("The 'ai06' variance_method requires the 'M' argument.")
+    # }
+    #
+    # v_e_result_list <- get_variance_AI06(
+    #   df = df,
+    #   scmatch = matches, # Pass the original S3 object
+    #   outcome = outcome,
+    #   treatment = treatment,
+    #   ... # Pass M, covs, scaling, metric, etc.
+    # )
+    #
+    # # Unpack complex object
+    # v_e_result <- v_e_result_list %>%
+    #   dplyr::select(-var_calc_df)
+    #
+    #
+    # V_E <- v_e_result_list$V_E
+    # sigma_hat_squared <- v_e_result_list$sigma_hat^2
+    # N_T <- v_e_result_list$N_T
+    # ESS_C <- v_e_result_list$ESS_C
+    # var_calc_df <- v_e_result_list$var_calc_df[[1]]
+    # # var_calc_df <- v_e_result_list$var_calc_df # Extract the data frame
+    # v_e_result <- v_e_result_list # for sigma_hat lookup later
 
   } else {
     # Update error message
@@ -741,14 +800,22 @@ get_total_variance <- function(
 #' @param superpopulation If TRUE (default), use the superpopulation
 #'   variance estimator via \code{get_total_variance()}.  If FALSE,
 #'   use the finite-sample estimator via \code{get_finite_variance()}.
+#' @param homoskedastic Passed to \code{get_finite_variance()} when
+#'   \code{superpopulation = FALSE}; if TRUE, assume treated and
+#'   control units share a common variance.
+#' @param use_common_variance Passed to \code{get_finite_variance()}
+#'   when \code{superpopulation = FALSE}; if TRUE (default), estimate
+#'   S1^2 from control-side subclass variances rather than
+#'   treated-to-treated K-NN matching.
 #' @param var_weight_type How cluster variances are averaged (default
 #'   "ess_units"): "num_units" weights by number of units in the
 #'   subclass; "ess_units" weights by effective sample size; "uniform"
 #'   weights each cluster equally.
 #' @param variance_method Variance method passed to
 #'   \code{get_total_variance()}: "pooled" (default), "pooled_het",
-#'   "bootstrap", or "ai06".  Ignored when \code{superpopulation =
-#'   FALSE}.
+#'   "bootstrap", or "ai06" (**incomplete**, not yet implemented in
+#'   this release; will error if selected). Ignored when
+#'   \code{superpopulation = FALSE}.
 #' @param boot_mtd Bootstrap method when variance_method = "bootstrap"
 #'   (default: "wild").
 #' @param B Number of bootstrap samples (default: 250).
@@ -769,6 +836,17 @@ get_total_variance <- function(
 #'   t-statistic (t), total variance (V), measurement error variance
 #'   (V_E), population heterogeneity variance (V_P), and other
 #'   relevant statistics.
+#'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' estimate_ATT(mtch, outcome = "Y")
 #'
 #' @export
 #'
@@ -914,8 +992,8 @@ calculate_s_j_sq <- function(matches_table, outcome = "Y", treatment = "Z") {
 #' Compute S1^2 via treated-to-treated matching
 #'
 #' For each treated unit t, finds the K nearest treated units, then
-#' computes s_{1t}^2 = (Y_t - mean_{K-NN} Y)^2. Returns S1^2 =
-#' mean_t(s_{1t}^2).
+#' computes s_1t^2 = (Y_t - mean_K-NN Y)^2. Returns S1^2 =
+#' mean_t(s_1t^2).
 #'
 #' @param df Full data frame (treated and control units).
 #' @param treatment Name of treatment variable.
@@ -930,9 +1008,12 @@ calculate_s_j_sq <- function(matches_table, outcome = "Y", treatment = "Z") {
 #' @param id_name Name of the unit ID column (default "id").
 #' @return A list with:
 #'   \describe{
-#'     \item{S1_sq}{Scalar: mean of s_{1t}^2 over treated units.}
+#'     \item{S1_sq}{Scalar: mean of s_1t^2 over treated units.}
 #'     \item{s_1t_sq}{Data frame with columns \code{id} and \code{s_1t_sq}.}
 #'   }
+#' @examples
+#' dat <- gen_one_toy(nt = 20)
+#' calculate_S1_sq_treated_to_treated(dat)
 #' @export
 calculate_S1_sq_treated_to_treated <- function(
     df, treatment = "Z", outcome = "Y",
@@ -1007,7 +1088,7 @@ calculate_S1_sq_treated_to_treated <- function(
 #'   hat_V = S1^2 / n_T  +  S0^2 / ESS(C)
 #' where S0^2 is the w_j^2-weighted average of s_j^2 across control units, and
 #' S1^2 is either the simple average of s_t^2 (common-variance assumption) or
-#' the average of s_{1t}^2 from treated-to-treated K-NN matching.
+#' the average of s_1t^2 from treated-to-treated K-NN matching.
 #'
 #' Also returns the estimated empirical covariance Cov_p(w_j, s_j^2)
 #' which goes with the alternate formulation of:
@@ -1025,6 +1106,9 @@ calculate_S1_sq_treated_to_treated <- function(
 #' @param use_common_variance If TRUE (default), estimate S1^2 from the
 #'   control-side subclass variances (assuming sigma_1(x)=sigma_0(x)).
 #'   If FALSE, estimate S1^2 via treated-to-treated K-NN matching.
+#' @param homoskedastic If TRUE, assume a single common variance
+#'   across treated and control units, setting S1^2 = S0^2 (only used
+#'   when \code{use_common_variance = TRUE}).
 #' @param K Number of treated neighbours for the treated-to-treated step
 #'   (used only when \code{use_common_variance = FALSE}).
 #' @param covs Character vector of covariate names.  Ignored when
@@ -1043,6 +1127,16 @@ calculate_S1_sq_treated_to_treated <- function(
 #'   \code{SE} (= sqrt(V_E)),
 #'   \code{N_T}, \code{ESS_C}, \code{sigma_hat} (NA),
 #'   plus diagnostics \code{S0_sq}, \code{S1_sq}, \code{cov_w_s}.
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' get_finite_variance(mtch, outcome = "Y")
 #' @export
 get_finite_variance <- function(
     matches,

@@ -39,3 +39,14 @@ A tibble with measurement error variance (V_E), standard error (SE), bootstrap c
 This function estimates the standard error of the ATT using a bootstrap approach
 based on residuals from the OR method.
 }
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+get_measurement_error_variance_OR(mtch, outcome = "Y", B = 20)
+}

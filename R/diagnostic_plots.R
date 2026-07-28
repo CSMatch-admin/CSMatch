@@ -1,5 +1,3 @@
-library(latex2exp)
-
 
 # functions to generate diagnostic plots
 create_toy_df_plot <- function(toy_df) {
@@ -33,12 +31,26 @@ create_toy_df_plot <- function(toy_df) {
 #'   no line.
 #' @param target_percentile Optional target percentile for caliper,
 #'   which will calculate caliper to achieve.
+#' @param target_k Which of the values in `tops` to use when computing
+#'   the caliper for `target_percentile` (default 1, the nearest
+#'   neighbor).
 #'
 #' @return The plot with some extra attributes.  First is "distances",
 #'   the table of distances to the kth nearest neighbor. Second, if
 #'   caliper provided, "table" with the table of proportion of
 #'   distances below the caliper for each k.  Last is "caliper", the
 #'   caliper value used.
+#'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' caliper_distance_plot(mtch, tops = c(1, 2, 3), target_percentile = 0.8)
 #'
 #' @export
 caliper_distance_plot <- function( csm, tops = 1:3, caliper = NULL,
@@ -142,6 +154,17 @@ caliper_distance_plot <- function( csm, tops = 1:3, caliper = NULL,
 #' @return A data frame with distances from each treated unit to their
 #'   synthetic control, average control, and closest control.
 #'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' get_distance_table(mtch)
+#'
 #' @export
 get_distance_table <- function( csm,
                                 long_table = FALSE ) {
@@ -235,6 +258,17 @@ get_distance_table <- function( csm,
 #' @return A ggplot object showing the density of distances. Also has
 #'   two attributes: "table" with summary statistics of the distances,
 #'   and "dist_table" with the full table of distances.
+#'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' distance_density_plot(mtch)
 #'
 #' @export
 distance_density_plot <- function(csm, feasible_only = FALSE, boxplot_style = TRUE ) {
@@ -352,304 +386,6 @@ scm_vs_avg_distance_plot <- function(csm) {
 }
 
 
-# estimate-estimand tradeoff plot -----------------------------------------
-
-satt_plot <- function(csm, B=NA) {
-
-  feasible_subclasses <- feasible_unit_subclass(csm)
-
-  n_feasible <- length(feasible_subclasses)
-
-  res = result_table(csm)
-  ggd_maxcal <- res %>%
-    filter(!subclass %in% feasible_subclasses) %>%
-    filter(Z==1) %>%
-    left_join( caliper_table(csm), by="id") %>%
-    arrange(adacal) %>%
-    mutate(order = 1:n() + n_feasible)
-
-  p1 <- ggd_maxcal %>%
-    ggplot(aes(x=order, y=adacal)) +
-    geom_col(fill="gray") +
-    geom_hline(yintercept=CALIPER, lty="dotted") +
-    theme_classic() +
-    labs(y = "Largest adaptive \ncaliper used",
-         x = "Total number of treated units used")
-
-  # ATT estimate vs. # co units added
-  ggd_att <- res %>%
-    left_join(caliper_table(csm), by="id") %>%
-    group_by(subclass) %>%
-    summarize(adacal = last(adacal),
-              tx = Y[2] - Y[1]) %>%
-    arrange(adacal) %>%
-    mutate(cum_avg = cumsum(tx) / (1:n()) ) %>%
-    slice((length(attr(res, "feasible_units"))+1):n()) %>%
-    mutate(order = 1:n() + n_feasible)
-
-  p2 <- ggd_att %>%
-    ggplot(aes(x=order, y=cum_avg)) +
-    geom_point() +
-    geom_step(linewidth=1) +
-    theme_classic() +
-    labs(y = "Cumulative ATT Estimate",
-         x = "Total number of treated units used")
-
-  if (!is.na(B)) {
-    # bootstrap dists of FSATT and SATT
-    boot_fsatt <- attr(res, "scweights") %>%
-      bind_rows() %>%
-      filter(subclass %in% feasible_subclasses) %>%
-      agg_co_units() %>%
-      boot_bayesian(B=B)
-
-    boot_satt <- attr(res, "scweights") %>%
-      agg_co_units() %>%
-      boot_bayesian(B=B)
-
-    # # using sd of bootstrap samples
-    # boot_df <- ggd_att %>%
-    #   filter(order == min(order) | order == max(order)) %>%
-    #   mutate(sd = c(sd(boot_fsatt), sd(boot_satt)))
-    #
-    # p2 <- p2 +
-    #   geom_errorbar(data=boot_df,
-    #                 aes(ymin=cum_avg-2*sd, ymax=cum_avg+2*sd),
-    #                 width = 1)
-
-    # using full distribution of bootstrap samples
-    boot_df <- ggd_att %>%
-      filter(order == min(order) | order == max(order)) %>%
-      mutate(q025 = c(quantile(boot_fsatt, 0.025),
-                      quantile(boot_satt, 0.025)),
-             q975 = c(quantile(boot_fsatt, 0.975),
-                      quantile(boot_satt, 0.975)))
-
-    p2 <- p2 +
-      geom_errorbar(data=boot_df,
-                    aes(ymin=q025, ymax=q975),
-                    width = 1)
-  }
-
-  p1/p2
-}
-
-satt_plot2 <- function(res, B=NA) {
-  feasible_subclasses <- attr(res, "feasible_subclasses")
-  n_feasible <- length(feasible_subclasses)
-
-  # ATT estimate vs. # co units added
-  ggd_att <- res %>%
-    left_join(attr(res, "adacalipers"), by="id") %>%
-    group_by(subclass) %>%
-    summarize(adacal = last(adacal),
-              tx = Y[2] - Y[1]) %>%
-    arrange(adacal) %>%
-    mutate(order = 1:n(),
-           cum_avg = cumsum(tx) / order ) %>%
-    slice((n_feasible+1):n())
-
-  foo <- ggd_att %>%
-    group_by(adacal) %>%
-    summarize(cum_avg = last(cum_avg),
-              n = n()) %>%
-    mutate(shape = ifelse(n==1, 20, 19))
-  p <- ggd_att %>%
-    ggplot(aes(x=adacal, y=cum_avg)) +
-    geom_point(data = foo,
-               aes(shape = shape),
-               size=2) +
-    geom_step() +
-    theme_classic() +
-    labs(y = "Cumulative ATT Estimate",
-         x = "Maximum caliper size used") +
-    scale_shape_identity()
-
-  if (!is.na(B)) {
-    # bootstrap dists of FSATT and SATT
-    boot_fsatt <- attr(res, "scweights") %>%
-      bind_rows() %>%
-      filter(subclass %in% feasible_subclasses) %>%
-      agg_co_units() %>%
-      boot_bayesian(B=B)
-
-    boot_satt <- attr(res, "scweights") %>%
-      agg_co_units() %>%
-      boot_bayesian(B=B)
-
-    # # using sd of bootstrap samples
-    # boot_df <- ggd_att %>%
-    #   filter(order == min(order) | order == max(order)) %>%
-    #   mutate(sd = c(sd(boot_fsatt), sd(boot_satt)))
-    #
-    # p2 <- p2 +
-    #   geom_errorbar(data=boot_df,
-    #                 aes(ymin=cum_avg-2*sd, ymax=cum_avg+2*sd),
-    #                 width = 1)
-
-    # using full distribution of bootstrap samples
-    boot_df <- ggd_att %>%
-      filter(order == min(order) | order == max(order)) %>%
-      mutate(q025 = c(quantile(boot_fsatt, 0.025),
-                      quantile(boot_satt, 0.025)),
-             q975 = c(quantile(boot_fsatt, 0.975),
-                      quantile(boot_satt, 0.975)))
-
-    p <- p +
-      geom_errorbar(data=boot_df,
-                    aes(ymin=q025, ymax=q975),
-                    width = 0.05)
-  }
-
-  p
-}
-
-satt_plot3 <- function(res, B=NA) {
-  feasible_subclasses <- attr(res, "feasible_subclasses")
-  n_feasible <- length(feasible_subclasses)
-
-  # ATT estimate vs. # co units added
-  ggd_att <- res %>%
-    left_join(attr(res, "adacalipers"), by="id") %>%
-    group_by(subclass) %>%
-    summarize(adacal = last(adacal),
-              tx = Y[2] - Y[1]) %>%
-    arrange(adacal) %>%
-    mutate(order = 1:n(),
-           cum_avg = cumsum(tx) / order ) %>%
-    slice((n_feasible):n())
-
-  p <- ggd_att %>%
-    ggplot(aes(x=order, y=cum_avg)) +
-    geom_line(alpha=0.5) +
-    geom_point(aes(color=adacal),
-               size=3) +
-    theme_classic() +
-    labs(y = "Cumulative ATT Estimate",
-         x = "Total number of treated units used",
-         color = "Maximum caliper size used") +
-    scale_color_continuous(low="blue", high="orange") +
-    expand_limits(color=1)
-
-  if (!is.na(B)) {
-    # bootstrap dists of FSATT and SATT
-    boot_fsatt <- attr(res, "scweights") %>%
-      bind_rows() %>%
-      filter(subclass %in% feasible_subclasses) %>%
-      agg_co_units() %>%
-      boot_bayesian(B=B)
-
-    boot_satt <- attr(res, "scweights") %>%
-      agg_co_units() %>%
-      boot_bayesian(B=B)
-
-    # using sd of bootstrap samples
-    boot_df <- ggd_att %>%
-      filter(order == min(order) | order == max(order)) %>%
-      mutate(sd = c(sd(boot_fsatt), sd(boot_satt)))
-
-    print(paste0("FSATT: (",
-                 round(boot_df$cum_avg[1]-1.96*boot_df$sd[1],3),
-                 ", ",
-                 round(boot_df$cum_avg[1]+1.96*boot_df$sd[1], 3), ")"))
-    print(paste0("SATT: (",
-                 round(boot_df$cum_avg[2]-1.96*boot_df$sd[2], 3),
-                 ", ",
-                 round(boot_df$cum_avg[2]+1.96*boot_df$sd[2], 3), ")"))
-
-    p <- p +
-      geom_errorbar(data=boot_df,
-                    aes(ymin=cum_avg-1.96*sd, ymax=cum_avg+1.96*sd),
-                    width = 0.5,
-                    linewidth=1) +
-      geom_point(aes(color=adacal),
-                 size=3)
-
-    # # using full distribution of bootstrap samples
-    # boot_df <- ggd_att %>%
-    #   filter(order == min(order) | order == max(order)) %>%
-    #   mutate(q025 = c(quantile(boot_fsatt, 0.025),
-    #                   quantile(boot_satt, 0.025)),
-    #          q975 = c(quantile(boot_fsatt, 0.975),
-    #                   quantile(boot_satt, 0.975)))
-    #
-    # p <- p +
-    #   geom_errorbar(data=boot_df,
-    #                 aes(ymin=q025, ymax=q975),
-    #                 width = 0.5) +
-    #   geom_point(aes(color=adacal),
-    #              size=3)
-  }
-
-  p
-}
-
-# fixed, with wild bootstrap
-satt_plot4 <- function(res, B=NA) {
-  feasible_subclasses <-
-    attr(res, "feasible_subclasses")
-  n_feasible <- length(feasible_subclasses)
-
-  # ATT estimate vs. # co units added
-  ggd_att <- res %>%
-    left_join(attr(res, "adacalipers"), by="id") %>%
-    group_by(subclass) %>%
-    summarize(adacal = last(adacal),
-              tx = Y[2] - Y[1]) %>%
-    arrange(adacal) %>%
-    mutate(order = 1:n(),
-           cum_avg = cumsum(tx) / order ) %>%
-    slice((n_feasible):n())
-
-  p <- ggd_att %>%
-    ggplot(aes(x=order, y=cum_avg)) +
-    geom_line(alpha=0.5) +
-    geom_point(
-      # aes(color=adacal),
-      size=3) +
-    theme_classic() +
-    labs(y = "Cumulative ATT Estimate",
-         x = "Total number of treated units used",
-         color = "Maximum caliper size used") +
-    # scale_color_continuous(low="blue", high="orange") +
-    expand_limits(color=1)
-
-  if (!is.na(B)) {
-    # bootstrap dists of FSATT and SATT
-    boot_fsatt <- res %>%
-      filter(subclass %in% feasible_subclasses) %>%
-      wild_bootstrap(B=B)
-
-    boot_satt <- attr(res, "scweights") %>%
-      agg_sc_units() %>%
-      wild_bootstrap(B=B)
-
-    # using sd of bootstrap samples
-    boot_df <- ggd_att %>%
-      filter(order == min(order) | order == max(order)) %>%
-      mutate(sd = c(sd(boot_fsatt), sd(boot_satt)))
-
-    print(paste0("FSATT: (",
-                 round(boot_df$cum_avg[1]-1.96*boot_df$sd[1],3),
-                 ", ",
-                 round(boot_df$cum_avg[1]+1.96*boot_df$sd[1], 3), ")"))
-    print(paste0("SATT: (",
-                 round(boot_df$cum_avg[2]-1.96*boot_df$sd[2], 3),
-                 ", ",
-                 round(boot_df$cum_avg[2]+1.96*boot_df$sd[2], 3), ")"))
-
-    p <- p +
-      geom_errorbar(data=boot_df,
-                    aes(ymin=cum_avg-1.96*sd, ymax=cum_avg+1.96*sd),
-                    width = 0.5,
-                    linewidth=1) +
-      geom_point(aes(color=adacal),
-                 size=3)
-  }
-
-  p
-}
-
 
 # love plot ---------------------------------------------------------------
 
@@ -695,10 +431,29 @@ create_love_plot_df <- function(res, covs){
 #' Love plot of covariate balance
 #'
 #' Make a ggplot love plot of covariate balance for each covariate
-#' passed.
+#' passed. Treated units are added one at a time, in order of
+#' increasing adaptive caliper, and the running treated-vs-control
+#' mean difference is tracked for each covariate.
+#'
+#' @param csm A csm_matches object.
+#' @param covs Character vector of covariate names to plot. Defaults
+#'   to all covariates used in the match.
+#' @param covs_names Optional character vector of display names for
+#'   `covs`, in the same order.
+#' @return A ggplot object.
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' love_plot(mtch, covs = c("X1", "X2"))
 #'
 #' @export
-love_plot <- function( csm, covs = NULL, covs_names = NULL, B=NA ) {
+love_plot <- function( csm, covs = NULL, covs_names = NULL ) {
 
 
   cc = params(csm)$covariates
@@ -739,33 +494,33 @@ love_plot <- function( csm, covs = NULL, covs_names = NULL, B=NA ) {
     theme_classic() +
     make_tx_axis( love_steps$order )
 
-  if (!is.na(B)) {
-    # bootstrap dists of FSATT and SATT
-    boot_fsatt <- attr(csm, "scweights") %>%
-      bind_rows() %>%
-      filter(subclass %in% feasible_subclasses) %>%
-      agg_co_units() %>%
-      boot_bayesian_covs(covs=covs, B=B) %>%
-      pivot_longer(everything()) %>%
-      group_by(name) %>%
-      summarize(q025 = quantile(value, 0.025),
-                q975 = quantile(value, 0.975)) %>%
-      mutate(order = n_feasible+1)
-
-    boot_satt <- attr(csm, "scweights") %>%
-      agg_co_units() %>%
-      boot_bayesian_covs(covs=covs, B=B) %>%
-      pivot_longer(everything()) %>%
-      group_by(name) %>%
-      summarize(q025 = quantile(value, 0.025),
-                q975 = quantile(value, 0.975)) %>%
-      mutate(order = max(love_steps$order))
-
-    p <- p +
-      geom_errorbar(data=bind_rows(boot_fsatt, boot_satt),
-                    aes(ymin=q025, ymax=q975),
-                    width = 1)
-  }
+  # if (!is.na(B)) {
+  #   # bootstrap dists of FSATT and SATT
+  #   boot_fsatt <- attr(csm, "scweights") %>%
+  #     bind_rows() %>%
+  #     filter(subclass %in% feasible_subclasses) %>%
+  #     agg_co_units() %>%
+  #     boot_bayesian_covs(covs=covs, B=B) %>%
+  #     pivot_longer(everything()) %>%
+  #     group_by(name) %>%
+  #     summarize(q025 = quantile(value, 0.025),
+  #               q975 = quantile(value, 0.975)) %>%
+  #     mutate(order = n_feasible+1)
+  #
+  #   boot_satt <- attr(csm, "scweights") %>%
+  #     agg_co_units() %>%
+  #     boot_bayesian_covs(covs=covs, B=B) %>%
+  #     pivot_longer(everything()) %>%
+  #     group_by(name) %>%
+  #     summarize(q025 = quantile(value, 0.025),
+  #               q975 = quantile(value, 0.975)) %>%
+  #     mutate(order = max(love_steps$order))
+  #
+  #   p <- p +
+  #     geom_errorbar(data=bind_rows(boot_fsatt, boot_satt),
+  #                   aes(ymin=q025, ymax=q975),
+  #                   width = 1)
+  # }
 
   return(p)
 
@@ -819,10 +574,25 @@ love_plot2 <- function(res, covs, B=NA) {
 #'
 #' @param csm A csm_matches object
 #' @param outcome The name of the outcome variable to plot.
+#' @param min_dist If TRUE (default), use the minimum distance from
+#'   the treated unit to its matched controls as the x-axis; if FALSE,
+#'   use the maximum distance.
+#' @param jitter If TRUE, jitter the plotted points horizontally to
+#'   reduce overplotting from tied distances.
 #'
 #' @return A ggplot object showing the impact curve. Also has an
 #'   attribute "table" with the underlying data used to create the
 #'   plot.
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' impact_curve(mtch, outcome = "Y")
 #' @export
 impact_curve <- function( csm, outcome, min_dist = TRUE, jitter = FALSE ) {
 

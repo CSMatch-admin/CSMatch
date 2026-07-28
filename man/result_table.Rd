@@ -24,6 +24,15 @@ weight across all their matches), or "all" (control units will be
 repeated if matched multiply). "exact" returns only exact matches
 (up to machine precision on distance). Defaults to "all".}
 
+\item{outcome}{Optional name of an outcome column, passed through
+to the aggregation function selected by \code{return} (e.g.
+\code{\link{agg_sc_units}}) when \code{return} is "sc_units" or
+"agg_co_units".}
+
+\item{id}{Optional character vector of treated-unit ids; if given,
+restrict the result to these treated units (and their matched
+controls).}
+
 \item{feasible_only}{TRUE means only return treated units and
 matched controls for units that could be matched without
 expanding the caliper.}
@@ -43,4 +52,16 @@ This method will give the controls as synthetic controls
 (sc_units), the individual controls with repeat rows if controls
 were used for different treated units (all), or aggregated controls
 with only one row per control unit (agg_co_units).
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+result_table(mtch, nonzero_weight_only = TRUE)
+
 }

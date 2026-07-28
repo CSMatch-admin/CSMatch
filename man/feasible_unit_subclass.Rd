@@ -6,11 +6,26 @@
 \usage{
 feasible_unit_subclass(csm)
 }
+\arguments{
+\item{csm}{A csm_matches object.}
+}
 \value{
-Numeric vector of IDs
+Character vector of subclass IDs.
 }
 \description{
 For all units matched without expanding the caliper, get the
 subclass IDs (i.e., the ids that link controls to treated units in
 matched clusters).
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+feasible_unit_subclass(mtch)
+
 }

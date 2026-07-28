@@ -62,6 +62,19 @@ prep_data <- function(scweights,
 #' @return A `data.frame` with aggregated treated and control
 #'   summaries.
 #'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' agg_sc_units(mtch, outcome = "Y")
+#' agg_co_units(mtch, outcome = "Y")
+#' agg_avg_units(mtch, outcome = "Y")
+#'
 #' @name AggregationMethods
 #' @aliases agg_sc_units agg_co_units agg_avg_units
 #'

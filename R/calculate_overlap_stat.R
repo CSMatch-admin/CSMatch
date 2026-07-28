@@ -21,8 +21,7 @@
 #'   (indexed by their IDs).} \item{Columns}{Contain IDs of matched
 #'   control units for each treated unit. Missing matches are filled
 #'   with \code{NA}.}
-#'
-#' @export
+#' @noRd
 get_matched_matrix <- function(full_matched_table) {
   # Get unique treated units
   treated_units <- unique(full_matched_table$id[full_matched_table$Z == 1])
@@ -79,8 +78,7 @@ get_matched_matrix <- function(full_matched_table) {
 #'
 #' @return A symmetric matrix where entry i,j is the count of shared
 #'   controls between treated units i and j
-#'
-#' @export
+#' @noRd
 compute_pairwise_shared_controls <- function(matched_matrix) {
   N1 <- nrow(matched_matrix)
 
@@ -118,8 +116,7 @@ compute_pairwise_shared_controls <- function(matched_matrix) {
 #' @param pairwise_shared_matrix A matrix from compute_pairwise_shared_controls
 #'
 #' @return A list with median, 75th percentile, and max statistics
-#'
-#' @export
+#' @noRd
 compute_pairwise_overlap_statistics <- function(pairwise_shared_matrix) {
   N1 <- nrow(pairwise_shared_matrix)
 
@@ -155,8 +152,7 @@ compute_pairwise_overlap_statistics <- function(pairwise_shared_matrix) {
 #'   control is matched} \item{max_reuse}{Maximum number of times a
 #'   control is matched} \item{control_reuse_counts}{Named vector of
 #'   reuse counts for each control}
-#'
-#' @export
+#' @noRd
 compute_mean_control_reuse <- function(matched_matrix) {
   # Flatten the matrix and remove NAs to get all control assignments
   all_control_assignments <- as.vector(matched_matrix)
@@ -204,8 +200,7 @@ compute_mean_control_reuse <- function(matched_matrix) {
 #'   number of shared controls for any treated unit}
 #'   \item{shared_per_treated}{Vector of shared control counts for
 #'   each treated unit}
-#'
-#' @export
+#' @noRd
 compute_shared_controls_per_treated <- function(matched_matrix) {
   N_treated <- nrow(matched_matrix)
 
@@ -271,6 +266,17 @@ compute_shared_controls_per_treated <- function(matched_matrix) {
 #' @param full_matched_table A data frame containing the matched data.
 #'
 #' @return A list containing all three sets of overlap statistics.
+#'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' calculate_overlap_stats_from_table(result_table(mtch, nonzero_weight_only = TRUE))
 #'
 #' @export
 calculate_overlap_stats_from_table <- function(full_matched_table) {
@@ -404,6 +410,17 @@ calculate_overlap_stats_from_table <- function(full_matched_table) {
 #'
 #' @return A list containing all three sets of overlap statistics.
 #'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' calculate_overlap_statistics_from_match_object(mtch)
+#'
 #' @export
 calculate_overlap_statistics_from_match_object <- function(mtch) {
   # Get the full matched table from the match object
@@ -431,6 +448,17 @@ calculate_overlap_statistics_from_match_object <- function(mtch) {
 #' @param mtch A match object from matching procedures
 #'
 #' @return Original pairwise overlap statistics for backward compatibility
+#'
+#' @examples
+#' set.seed(4044440)
+#' dat <- gen_one_toy(nt = 5)
+#' mtch <- get_cal_matches(dat,
+#'                         metric = "maximum",
+#'                         scaling = c(1/0.2, 1/0.2),
+#'                         caliper = 1,
+#'                         rad_method = "adaptive",
+#'                         est_method = "csm")
+#' calculate_overlap_statistics(mtch)
 #'
 #' @export
 calculate_overlap_statistics <- function(mtch) {

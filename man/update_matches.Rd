@@ -9,13 +9,22 @@ update_matches(res, data, warn = TRUE, ...)
 \arguments{
 \item{res}{A csm_matches object}
 
-\item{...}{Parameters to change in the matching call}
+\item{data}{The data frame to rematch (typically the same data
+originally passed to \code{\link[=get_cal_matches]{get_cal_matches()}})}
+
+\item{warn}{A logical indicating whether to warn about dropped
+units (passed through to \code{\link[=get_cal_matches]{get_cal_matches()}})}
+
+\item{...}{Parameters to change in the matching call, e.g.
+\code{caliper} or \code{rad_method}}
 }
 \value{
 A new csm_matches object with updated parameters
 }
 \description{
-Update a matching call to change some parameters
+Refits \code{\link[=get_cal_matches]{get_cal_matches()}} on \code{data} reusing all settings (metric,
+scaling, treatment, covariates, etc.) stored on \code{res}, except for
+any settings overridden via \code{...}.
 }
 \examples{
 # Generate example data
@@ -33,6 +42,6 @@ mtch <- get_cal_matches(dat,
 # View matching results
 mtch
 
-update_matches( mtch, caliper = 0.05, rad_method = "fixed" )
+update_matches( mtch, dat, caliper = 0.5, rad_method = "fixed" )
 
 }

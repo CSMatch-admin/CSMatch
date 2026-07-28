@@ -6,6 +6,25 @@
 \usage{
 caliper_table(csm)
 }
+\arguments{
+\item{csm}{A csm_matches object.}
+}
+\value{
+Dataframe with one row per treated unit, giving its
+subclass, feasibility, matched-control distance range, and
+adaptive caliper.
+}
 \description{
 Return table of calipers for all treated units
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+caliper_table(mtch)
 }

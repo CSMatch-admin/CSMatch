@@ -16,9 +16,22 @@ sensitivity_table(
 \item{csm}{A csm_matches object}
 
 \item{outcome}{Name of outcome variable in data}
+
+\item{feasible_only}{If TRUE, also restrict the "ATT"/"ATT_1nn"/
+"ATT_raw" rows to feasible treated units only (in addition to the
+"FATT" rows, which are always feasible-only).}
+
+\item{include_variances}{If TRUE, include the individual variance
+components (e.g. \code{V}, \code{V_E}, \code{V_P}) for each
+estimate, not just the standard error.}
+
+\item{include_distances}{If TRUE, include columns summarizing the
+distance between each treated unit and its matched/synthetic
+control (mean/median distance, and pseudo-SE/bias ratios relative
+to the raw-average estimate).}
 }
 \value{
-A tibble with the four ATT estimates and standard errors
+A tibble with the estimates and standard errors
 }
 \description{
 Given a csm_matches object, this function computes several different
@@ -35,6 +48,18 @@ matches within the caliper)
 \details{
 These estimates can be used to assess sensitivity of results to
 different choices in matching and estimation.  Return results are from the \code{estimate_ATT()} method
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+sensitivity_table(mtch, outcome = "Y")
+
 }
 \seealso{
 \code{\link[=estimate_ATT]{estimate_ATT()}}

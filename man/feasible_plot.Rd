@@ -10,6 +10,9 @@ feasible_plot(csm, outcome = "Y", return_table = FALSE, caliper_plot = FALSE)
 \arguments{
 \item{csm}{A csm_matches object}
 
+\item{outcome}{Name of the outcome column to use for the cumulative
+ATT estimate (default "Y").}
+
 \item{return_table}{If TRUE, return the full table of results
 instead of a plot}
 
@@ -26,4 +29,16 @@ Given a csm_matches object, this function makes a plot showing how
 the cumulative ATT estimate changes as more feasible treated units
 are added (i.e., as the caliper size increases to include more
 treated units).
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+feasible_plot(mtch, outcome = "Y")
+
 }

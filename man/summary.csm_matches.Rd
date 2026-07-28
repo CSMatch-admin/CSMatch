@@ -4,13 +4,32 @@
 \alias{summary.csm_matches}
 \title{Summary method for csm_matches object}
 \usage{
-\method{summary}{csm_matches}(x, outcome = NULL, ...)
+\method{summary}{csm_matches}(object, outcome = NULL, ...)
 }
 \arguments{
-\item{x}{object to summarize}
+\item{object}{A csm_matches object to summarize}
+
+\item{outcome}{Optional name of an outcome column; if given, also
+reports the ATT estimate for that outcome.}
 
 \item{...}{Extra arguments (currently ignored).}
 }
+\value{
+Invisibly, a list with the csm_matches object (\code{csm}), the
+ATT estimate table if \code{outcome} was given (\code{att}), and a table of
+subclass sizes (\code{subclass_sizes}).
+}
 \description{
 Summary method for csm_matches object
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+summary(mtch, outcome = "Y")
 }

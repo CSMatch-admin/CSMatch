@@ -16,3 +16,15 @@ A list containing all three sets of overlap statistics.
 Extracts a matched table from a match object and then calculates all three
 overlap metrics.
 }
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+calculate_overlap_statistics_from_match_object(mtch)
+
+}

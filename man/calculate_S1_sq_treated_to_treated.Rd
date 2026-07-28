@@ -38,12 +38,16 @@ uses default_scaling(df, covs).}
 \value{
 A list with:
 \describe{
-\item{S1_sq}{Scalar: mean of s_{1t}^2 over treated units.}
+\item{S1_sq}{Scalar: mean of s_1t^2 over treated units.}
 \item{s_1t_sq}{Data frame with columns \code{id} and \code{s_1t_sq}.}
 }
 }
 \description{
 For each treated unit t, finds the K nearest treated units, then
-computes s_{1t}^2 = (Y_t - mean_{K-NN} Y)^2. Returns S1^2 =
-mean_t(s_{1t}^2).
+computes s_1t^2 = (Y_t - mean_K-NN Y)^2. Returns S1^2 =
+mean_t(s_1t^2).
+}
+\examples{
+dat <- gen_one_toy(nt = 20)
+calculate_S1_sq_treated_to_treated(dat)
 }

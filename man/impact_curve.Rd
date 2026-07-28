@@ -10,6 +10,13 @@ impact_curve(csm, outcome, min_dist = TRUE, jitter = FALSE)
 \item{csm}{A csm_matches object}
 
 \item{outcome}{The name of the outcome variable to plot.}
+
+\item{min_dist}{If TRUE (default), use the minimum distance from
+the treated unit to its matched controls as the x-axis; if FALSE,
+use the maximum distance.}
+
+\item{jitter}{If TRUE, jitter the plotted points horizontally to
+reduce overplotting from tied distances.}
 }
 \value{
 A ggplot object showing the impact curve. Also has an
@@ -19,4 +26,15 @@ plot.
 \description{
 Plot the relationship between maximum distance in matched set and
 the outcome difference within matched sets.
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+impact_curve(mtch, outcome = "Y")
 }

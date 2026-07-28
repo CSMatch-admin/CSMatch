@@ -44,3 +44,7 @@ A tibble containing a toy dataset
 \description{
 generate data mostly in grid (0,1) x (0,1)
 }
+\examples{
+dat <- gen_df_adv(nc = 100, nt = 10)
+dim(dat)
+}

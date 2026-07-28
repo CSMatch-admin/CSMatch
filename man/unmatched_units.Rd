@@ -6,9 +6,24 @@
 \usage{
 unmatched_units(csm)
 }
+\arguments{
+\item{csm}{A csm_matches object.}
+}
 \value{
 dataframe, one row per treated unit.
 }
 \description{
 Obtain table of treated units that were not matched
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+unmatched_units(mtch)
+
 }

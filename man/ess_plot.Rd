@@ -7,12 +7,32 @@
 ess_plot(csm, feasible_only = FALSE)
 }
 \arguments{
-\item{d}{Data frame of matched units including columns for Z
-(treatment indicator), subclass (matched set identifier), dist
-(distance from treated unit), and weights (CSM weights).  E.g., the results from the}
+\item{csm}{A csm_matches object.}
+
+\item{feasible_only}{If TRUE, compute ESS over only the feasible
+treated units (those matched within the target caliper);
+otherwise use all treated units (including those matched via an
+expanded adaptive caliper).}
+}
+\value{
+A ggplot object (bar chart of ESS by weighting method), with
+the underlying table of values attached as the \code{"table"}
+attribute.
 }
 \description{
 Plot the effective sample size (ESS) of the treated units, and
 various forms of possible control groups depending on their
 weighting.
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+ess_plot(mtch)
+
 }

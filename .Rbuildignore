@@ -1,5 +1,16 @@
-^CSMatch\.Rproj$
+^CSM\.Rproj$
 ^\.Rproj\.user$
 ^README\.Rmd$
 ^\.positai$
 ^\.claude$
+^doc$
+^Meta$
+^LICENSE\.md$
+^scripts$
+^data$
+^figures$
+^writeup$
+^old_code$
+^to_do_list\.md$
+^CLAUDE\.md$
+^cran-comments\.md$

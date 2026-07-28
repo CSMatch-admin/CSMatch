@@ -15,3 +15,14 @@ A list of the settings used in the matching call
 \description{
 Return the parameters of the method
 }
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+params(mtch)
+}

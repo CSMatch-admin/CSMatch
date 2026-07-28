@@ -13,20 +13,37 @@ boot_SE(
 )
 }
 \arguments{
-\item{matches_table}{The data frame of the matched table}
+\item{matches_table}{The data frame of the matched table, or a
+csm_matches object (converted internally via
+\code{\link{result_table}()}).}
 
 \item{outcome}{Name of the outcome variable (default "Y")}
 
 \item{treatment}{Name of the treatment variable (default "Z")}
 
-\item{var_weight_type}{The way that cluster variances are averaged
-"num_units": weight by number of units in the subclass
-"ess_units": weight effective size of units in the subclass
-"uniform: weight each cluster equally.}
+\item{B}{Number of bootstrap resamples (default 100).}
+
+\item{boot_mtd}{Bootstrap resampling method: one of "Bayesian",
+"wild", "sign" (default), or "naive".}
 }
 \value{
-A tibble with SE, sigma_hat, N_T, and N_C_tilde
+A tibble with columns \code{SE_unif_weight} and
+\code{SE_SCM_weight}, the bootstrap standard errors of the ATT
+under uniform (CEM-style) and CSM synthetic-control weighting,
+respectively.
 }
 \description{
 This is the main bootstrap function.
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 20)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+boot_SE(mtch, B = 50)
+
 }

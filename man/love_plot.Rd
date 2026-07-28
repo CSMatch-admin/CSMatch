@@ -4,9 +4,35 @@
 \alias{love_plot}
 \title{Love plot of covariate balance}
 \usage{
-love_plot(csm, covs = NULL, covs_names = NULL, B = NA)
+love_plot(csm, covs = NULL, covs_names = NULL)
+}
+\arguments{
+\item{csm}{A csm_matches object.}
+
+\item{covs}{Character vector of covariate names to plot. Defaults
+to all covariates used in the match.}
+
+\item{covs_names}{Optional character vector of display names for
+\code{covs}, in the same order.}
+}
+\value{
+A ggplot object.
 }
 \description{
 Make a ggplot love plot of covariate balance for each covariate
-passed.
+passed. Treated units are added one at a time, in order of
+increasing adaptive caliper, and the running treated-vs-control
+mean difference is tracked for each covariate.
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+love_plot(mtch, covs = c("X1", "X2"))
+
 }

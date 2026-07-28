@@ -21,3 +21,14 @@ subclass, max_dist, outcome (estimated impact), precision
 This table summarizes the estimated impact for each treated unit,
 along with the effective sample size of the controls used.
 }
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 5)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+impact_table(mtch, outcome = "Y")
+}

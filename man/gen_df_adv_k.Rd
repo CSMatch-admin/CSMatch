@@ -42,3 +42,7 @@ A tibble containing a k-dimensional toy dataset.
 \description{
 Generate k-dimensional toy data (generalized version)
 }
+\examples{
+dat <- gen_df_adv_k(nc = 100, nt = 10, k = 3)
+dim(dat)
+}

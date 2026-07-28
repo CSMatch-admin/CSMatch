@@ -17,7 +17,9 @@
 #' @param caliper Caliper size
 #' @param k For knn method, number of nearest neighbors
 #'
-#' @export
+#' @return A numeric vector, one radius size per treated unit (per row
+#'   of `dm`).
+#' @noRd
 get_radius_size <- function(dm,
                             rad_method = c("adaptive", "targeted", "fixed", "1nn", "knn", "knn-capped"),
                             caliper,
@@ -151,13 +153,6 @@ set_NA_to_unmatched_co <- function(dm_uncapped, radius_sizes){
 #'     \item "1nn": distance to nearest neighbor
 #'     \item "adaptive-5nn": adaptive with cap at 5th NN
 #'     \item "knn": distance to the k-th nearest neighbor
-#'   }
-#'
-#' @param est_method How to weight control units:
-#'   \itemize{
-#'     \item "csm": synthetic control weights
-#'     \item "csm_extrap": CSM with extrapolation
-#'     \item "average": simple average
 #'   }
 #'
 #' @param scaling Length-P vector of scaling constants (or a
@@ -306,14 +301,16 @@ gen_matches <- function( data,
 #'   sets, with a tx unit in first row of each set.
 #' @param covs List of covariates to calculate similarity scores on if
 #'   using csm.
+#' @param treatment Name of the treatment indicator column.
 #' @param scaling tibble with scaling for each covariate
+#' @param metric Distance metric: "maximum", "euclidean", or
+#'   "manhattan". Only used when `est_method = "csm"`.
 #' @param est_method "csm" or "average"
 #'
 #' @return If passed an csm object, an updated csm object with
 #'   weights. Otherwise, return list of matched sets, with 'weights'
 #'   for each control unit.
-#'
-#' @export
+#' @noRd
 est_weights <- function( matched_gps,
                          est_method = c("csm", "average"),
                          covs = params(matched_gps)$covariates,

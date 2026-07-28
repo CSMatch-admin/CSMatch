@@ -32,3 +32,7 @@ A tibble with the toy dataset
 \description{
 Generate a toy dataset with a single treatment effect (Updated to use gen_df_adv_k)
 }
+\examples{
+dat <- gen_one_toy(nt = 5)
+dim(dat)
+}

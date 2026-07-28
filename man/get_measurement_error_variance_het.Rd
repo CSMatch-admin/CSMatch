@@ -17,6 +17,9 @@ get_measurement_error_variance_het(
 \item{outcome}{Name of the outcome variable (default "Y")}
 
 \item{treatment}{Name of the treatment variable (default "Z")}
+
+\item{cluster_comb_mtd}{How per-subclass variances are combined
+across subclasses (default "sample").}
 }
 \value{
 A tibble with measurement error variance (V_E), pooled sigma_hat, N_T, and ESS_C
@@ -25,4 +28,15 @@ A tibble with measurement error variance (V_E), pooled sigma_hat, N_T, and ESS_C
 Calculates the measurement error variance component allowing for heterogeneous
 variances across matched subclasses. This uses subclass-specific outcome variances
 and propagates them through the weighting structure to estimate V_E.
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 20)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+get_measurement_error_variance_het(result_table(mtch), outcome = "Y")
 }

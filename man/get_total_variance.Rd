@@ -34,13 +34,25 @@ get_total_variance(
 "pooled": use get_measurement_error_variance (default).
 "bootstrap": use get_measurement_error_variance_OR.
 "pooled_het": allow for heterogeneity.
-"ai06": the estimator of Abadie and Imbens.}
+"ai06": the estimator of Abadie and Imbens. \strong{Incomplete:} this
+option is not yet implemented in this release (it calls an
+internal helper, \code{get_variance_AI06()}, that does not currently
+exist) and will error if selected.}
 
 \item{boot_mtd}{Bootstrap method when variance_method = "bootstrap" (default: "wild")}
 
 \item{B}{Number of bootstrap samples when variance_method = "bootstrap" (default: 250)}
 
 \item{seed_addition}{Additional seed for bootstrap (default: 11)}
+
+\item{cluster_comb_mtd}{How per-subclass variances are combined
+when \code{variance_method = "pooled_het"} (default "average").}
+
+\item{df}{The \emph{full} original data frame. Required when
+\code{variance_method = "ai06"}.}
+
+\item{...}{Additional arguments passed to the chosen variance
+estimator; e.g. \code{M} when \code{variance_method = "ai06"}.}
 }
 \value{
 A tibble with total variance (V), measurement error variance (V_E),
@@ -49,4 +61,15 @@ population heterogeneity variance (V_P), and other relevant statistics
 \description{
 Implements the total variance estimator from the paper, which accounts for
 both measurement error variance (V_E) and population heterogeneity variance (V_P).
+}
+\examples{
+set.seed(4044440)
+dat <- gen_one_toy(nt = 20)
+mtch <- get_cal_matches(dat,
+                        metric = "maximum",
+                        scaling = c(1/0.2, 1/0.2),
+                        caliper = 1,
+                        rad_method = "adaptive",
+                        est_method = "csm")
+get_total_variance(mtch, outcome = "Y")
 }

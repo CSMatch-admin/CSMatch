@@ -7,6 +7,7 @@
 #' @param X1 Target vector
 #' @param X0 Matrix of control outcomes
 #' @param V Scaling matrix
+#' @noRd
 synth_qp <- function(X1, X0, V) {
 
   Pmat <- X0 %*% V %*% t(X0)

@@ -89,6 +89,12 @@ make_treatment_table <- function( matches ) {
 #'   units (those that cannot be matched within the caliper).
 #' @param k Integer specifying the number of neighbors to use when
 #'   \code{rad_method = "knn"}.
+#' @param est_method How to weight control units:
+#'   \itemize{
+#'     \item "csm": synthetic control weights
+#'     \item "csm_extrap": CSM with extrapolation
+#'     \item "average": simple average
+#'   }
 #'
 #' @return An S3 object of class "csm_matches" containing:
 #'   \itemize{
@@ -102,8 +108,7 @@ make_treatment_table <- function( matches ) {
 #'   matching.
 #'
 #' @seealso \code{\link{gen_matches}} for the underlying matching
-#'   function, \code{\link{est_weights}} for weight calculation,
-#'   \code{\link{result_table}} for extracting results
+#'   function, \code{\link{result_table}} for extracting results
 #'
 #' @examples
 #' # Generate example data
