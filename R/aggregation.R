@@ -131,12 +131,23 @@ agg_co_units <- function(scweights,
   covariates <- prep$covariates
   scweights <- prep$scweights
 
+  # Unlike agg_sc_units()/agg_avg_units(), this function keeps every
+  # column (not just `covariates`/`outcome`) via first(), since no
+  # aggregation math happens across values -- but a bad `treatment`
+  # or `outcome` argument should still be caught rather than silently
+  # ignored.
+  stopifnot( treatment %in% names(scweights) )
+  if ( !is.null(outcome) ) {
+    stopifnot( outcome %in% names(scweights) )
+  }
+
   scweights %>%
     group_by(id) %>%
     summarize(across(-contains("weights"), ~first(.)),
               weights = sum(weights),
               subclass = NA,
-              dist = NA)
+              dist = NA,
+              .groups = "drop")
 }
 
 

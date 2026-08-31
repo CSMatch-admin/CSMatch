@@ -27,6 +27,20 @@ get_radius_size <- function(dm,
   ntx = nrow(dm)
   rad_method <- match.arg(rad_method)
 
+  # "adaptive", "targeted", "knn-capped", and "knn" (for k > 1) all index
+  # into the sorted per-unit distances at position k; check up front that
+  # this is possible, rather than silently returning NA (and silently
+  # dropping treated units downstream) when k exceeds the number of
+  # available controls.
+  uses_k_index <- rad_method %in% c("adaptive", "targeted", "knn-capped") ||
+    (rad_method == "knn" && k > 1)
+  if (uses_k_index && k > ncol(dm)) {
+    stop(sprintf(
+      "k (%d) exceeds the number of available control units (%d) for rad_method = \"%s\".",
+      k, ncol(dm), rad_method
+    ))
+  }
+
   radius_sizes <- numeric(ntx)
   if (rad_method == "adaptive") {
     # Adaptive: r = max(caliper, knn)

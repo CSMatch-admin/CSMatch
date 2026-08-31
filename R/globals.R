@@ -15,7 +15,7 @@ utils::globalVariables(c(
   "id", "lalonde_params", "matched", "max_dist", "mean_dist",
   "median_dist", "method", "min_dist", "mn", "n_c", "n_feasible",
   "name", "nc", "noise", "pct_below_caliper", "precision", "q025", "q975",
-  "s_t_sq", "sample_var_cluster", "shape", "subclass",
+  "s_t_sq", "shape", "subclass",
   "sum_squared_weights", "sum_weights", "total_wt", "total_wt_squared",
   "tx", "uniform_weighted_sum_Y_Z0", "value", "var_cluster",
   "weight", "weights_SCM", "weights_unif"

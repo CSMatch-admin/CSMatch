@@ -110,7 +110,7 @@ test_that("get_matches works with different matching types", {
     X1 = c(0,0.5,0.8,3,1.6),
     X2 = c(0,0,0,0,0)
   )
-  res_knn <- get_matches("euclidean_knn", test_df2, scaling = 1)
+  res_knn <- get_matches("euclidean_knn", test_df2, scaling = 1, k = 2)
   expect_true(nrow(res_knn) >= 1)
 
   expect_error(

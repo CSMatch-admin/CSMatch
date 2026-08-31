@@ -87,6 +87,21 @@ test_that("gen_df_acic returns tibble (skip if package missing)", {
   expect_s3_class(out, "tbl_df")
 })
 
+test_that("gen_df_acic does not leak its internal seed into the caller's RNG stream", {
+  testthat::skip_if_not_installed("aciccomp2016")
+
+  set.seed(999)
+  before <- runif(1)
+
+  invisible(gen_df_acic(n = 50, p = 5, random.seed = 42))
+  after_first_call <- runif(1)
+
+  set.seed(999)
+  expect_equal(runif(1), before)
+  invisible(gen_df_acic(n = 50, p = 5, random.seed = 42))
+  expect_equal(runif(1), after_first_call)
+})
+
 test_that("gen_df_kang returns data frame", {
   out <- gen_df_kang(50)
   expect_s3_class(out, "data.frame")

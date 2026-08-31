@@ -92,7 +92,6 @@ make_treatment_table <- function( matches ) {
 #' @param est_method How to weight control units:
 #'   \itemize{
 #'     \item "csm": synthetic control weights
-#'     \item "csm_extrap": CSM with extrapolation
 #'     \item "average": simple average
 #'   }
 #'
@@ -137,7 +136,7 @@ get_cal_matches <- function( data,
                              metric = c("maximum", "euclidean", "manhattan"),
                              caliper = 1,
                              rad_method = c("adaptive", "fixed", "1nn", "knn", "knn-capped"),
-                             est_method = c("csm", "csm_extrap", "average"),
+                             est_method = c("csm", "average"),
                              scaling = NULL,
                              id_name = "id",
                              warn = TRUE ,

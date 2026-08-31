@@ -282,6 +282,40 @@ test_that("get_radius_size should get the correct output",{
 })
 
 
+test_that("get_radius_size errors immediately when k exceeds the number of controls", {
+  # dm has 3 treated units (rows), 4 control units (columns)
+  dm <- matrix(c(1.5, 2, 1.6, 1.5,
+                 1.3, 1.9, 1.8, 0.7,
+                 0.9, 0.5, 0.3, 0.2),
+               byrow = TRUE, nrow = 3)
+
+  # k=5 exceeds ncol(dm)=4 for every method that indexes on k
+  expect_error(
+    get_radius_size(dm = dm, rad_method = "adaptive", caliper = 1, k = 5),
+    "exceeds the number of available control units"
+  )
+  expect_error(
+    get_radius_size(dm = dm, rad_method = "targeted", caliper = 1, k = 5),
+    "exceeds the number of available control units"
+  )
+  expect_error(
+    get_radius_size(dm = dm, rad_method = "knn-capped", caliper = 1, k = 5),
+    "exceeds the number of available control units"
+  )
+  expect_error(
+    get_radius_size(dm = dm, rad_method = "knn", k = 5),
+    "exceeds the number of available control units"
+  )
+
+  # k=5 is irrelevant (unused) for "fixed" and "1nn" -- should not error
+  expect_no_error(get_radius_size(dm = dm, rad_method = "fixed", caliper = 1, k = 5))
+  expect_no_error(get_radius_size(dm = dm, rad_method = "1nn", k = 5))
+
+  # k within bounds still works fine
+  expect_no_error(get_radius_size(dm = dm, rad_method = "adaptive", caliper = 1, k = 4))
+})
+
+
 
 
 test_that("set_NA_to_unmatched_co should get the correct output",{

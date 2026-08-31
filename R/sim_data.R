@@ -503,6 +503,14 @@ gen_df_acic <- function(model.trt="step",
     stop("Package 'aciccomp2016' is needed for this function. Please install it.")
   }
 
+  # Make the covariate sampling below reproducible given `random.seed`
+  # without leaking a changed RNG state back to the caller.
+  if (exists(".Random.seed", envir = .GlobalEnv)) {
+    old_seed <- get(".Random.seed", envir = .GlobalEnv)
+    on.exit(assign(".Random.seed", old_seed, envir = .GlobalEnv), add = TRUE)
+  } else {
+    on.exit(rm(".Random.seed", envir = .GlobalEnv), add = TRUE)
+  }
   set.seed(random.seed)
 
   # Use namespaced dataset from aciccomp2016

@@ -494,74 +494,9 @@ love_plot <- function( csm, covs = NULL, covs_names = NULL ) {
     theme_classic() +
     make_tx_axis( love_steps$order )
 
-  # if (!is.na(B)) {
-  #   # bootstrap dists of FSATT and SATT
-  #   boot_fsatt <- attr(csm, "scweights") %>%
-  #     bind_rows() %>%
-  #     filter(subclass %in% feasible_subclasses) %>%
-  #     agg_co_units() %>%
-  #     boot_bayesian_covs(covs=covs, B=B) %>%
-  #     pivot_longer(everything()) %>%
-  #     group_by(name) %>%
-  #     summarize(q025 = quantile(value, 0.025),
-  #               q975 = quantile(value, 0.975)) %>%
-  #     mutate(order = n_feasible+1)
-  #
-  #   boot_satt <- attr(csm, "scweights") %>%
-  #     agg_co_units() %>%
-  #     boot_bayesian_covs(covs=covs, B=B) %>%
-  #     pivot_longer(everything()) %>%
-  #     group_by(name) %>%
-  #     summarize(q025 = quantile(value, 0.025),
-  #               q975 = quantile(value, 0.975)) %>%
-  #     mutate(order = max(love_steps$order))
-  #
-  #   p <- p +
-  #     geom_errorbar(data=bind_rows(boot_fsatt, boot_satt),
-  #                   aes(ymin=q025, ymax=q975),
-  #                   width = 1)
-  # }
-
   return(p)
 
 }
-
-
-love_plot2 <- function(res, covs, B=NA) {
-  feasible_subclasses <- attr(res, "feasible_subclasses")
-  n_feasible <- length(feasible_subclasses)
-
-  adacal_key <- attr(res, "adacalipers") %>%
-    rename(subclass = id) %>%
-    arrange(adacal) %>%
-    mutate(order = 1:n())
-
-  love_steps <- res %>%
-    left_join(adacal_key, by="subclass") %>%
-    group_by(Z) %>%
-    arrange(order) %>%
-    mutate(across(all_of(covs), ~cumsum(.) / order)) %>%
-    slice((n_feasible):n()) %>%
-    pivot_longer(all_of(covs))
-
-  love_steps %>%
-    mutate(Z = as.factor(Z)) %>%
-    ggplot(aes(x=order, y=value, color=Z)) +
-    # geom_line(aes(group=order), alpha=0.3, color="black") +
-    geom_point(size=1) +
-    geom_point(data=. %>%
-                 filter(order == max(order) |
-                          order == min(order)),
-               size=2) +
-    geom_line(aes(group=interaction(name, Z)),
-              alpha=0.3) +
-    facet_wrap(~name, scales="free_y") +
-    labs(y = "Marginal mean",
-         x = "Total number of treated units used",
-         color = "Z") +
-    theme_classic()
-}
-
 
 
 # Impact curve ----

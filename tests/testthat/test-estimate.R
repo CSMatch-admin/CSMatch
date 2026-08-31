@@ -474,6 +474,43 @@ test_that("get_measurement_error_variance_OR calculates SE and related values co
 })
 
 
+test_that("get_measurement_error_variance_OR accepts boot_mtd='sign' (the boot_SE default)", {
+  # Regression test: 'sign' was rejected here even though it's a
+  # fully valid make_bootstrap()/boot_SE() method (indeed boot_SE()'s
+  # own default).
+  mock_matches <- data.frame(
+    subclass = rep(1:3, each = 3),
+    Z = c(0, 0, 1,
+          1, 1, 1,
+          0, 0, 1),
+    Y = c(1, 3, 2,
+          0, 3, 10,
+          2, 4, 5),
+    weights = c(0.9, 0.1, 1,
+                1/3, 1/3, 1/3,
+                0.5, 0.5, 1),
+    id = c(1,2,3,
+           4,5,6,
+           1,2,7)
+  )
+
+  result <- get_measurement_error_variance_OR(
+    mock_matches,
+    outcome = "Y",
+    treatment = "Z",
+    boot_mtd = "sign"
+  )
+  expect_true(result$SE > 0)
+
+  expect_error(
+    get_measurement_error_variance_OR(
+      mock_matches, outcome = "Y", treatment = "Z", boot_mtd = "invalid_method"
+    ),
+    regexp = "boot_mtd must be one of"
+  )
+})
+
+
 
 
 
@@ -668,6 +705,39 @@ test_that("het_var: handles subclasses with < 2 controls (var = NA)", {
 })
 
 
+# ---- Tests for get_total_variance ----------------------------------------
+
+test_that("get_total_variance: pooled_het + cluster_comb_mtd='sample' runs without error", {
+  # Regression test: V_correction previously referenced a nonexistent
+  # column `sample_var_cluster` (typo for `rand_var_cluster`), so this
+  # call always errored with "object 'sample_var_cluster' not found".
+  set.seed(123)
+  result <- get_total_variance(
+    mock_matches_het,
+    variance_method = "pooled_het",
+    cluster_comb_mtd = "sample"
+  )
+
+  expect_s3_class(result, "tbl_df")
+  expect_true(is.numeric(result$V_correction))
+  expect_false(is.na(result$V_correction))
+  expect_true(is.numeric(result$V))
+  expect_false(is.na(result$V))
+})
+
+test_that("get_total_variance: pooled_het + cluster_comb_mtd='average' still runs", {
+  result <- get_total_variance(
+    mock_matches_het,
+    variance_method = "pooled_het",
+    cluster_comb_mtd = "average"
+  )
+
+  expect_s3_class(result, "tbl_df")
+  expect_true(is.numeric(result$V_correction))
+  expect_false(is.na(result$V_correction))
+})
+
+
 # ---- Tests for calculate_s_j_sq -----------------------------------------
 
 test_that("calculate_s_j_sq: s_t_sq correct per subclass", {
@@ -835,6 +905,44 @@ test_that("get_finite_variance: errors without df when use_common_variance=FALSE
     ),
     regexp = "'df' is required"
   )
+})
+
+test_that("estimate_ATT: use_common_variance=FALSE works on both csm_matches objects and plain data frames", {
+  # Regression test: covs/scaling/metric/id_name used to be forwarded
+  # via `...` from local variables that only existed inside the
+  # is.csm_matches() branch, so a plain data frame (or an explicit
+  # override) hit "formal argument matched by multiple actual
+  # arguments" instead of working.
+  set.seed(4044440)
+  dat <- gen_one_toy(nt = 15)
+  mtch <- get_cal_matches(dat,
+                          treatment = "Z",
+                          metric = "maximum",
+                          scaling = c(1/0.2, 1/0.2),
+                          caliper = 1,
+                          rad_method = "adaptive",
+                          est_method = "csm")
+
+  # csm_matches object: covs/scaling/metric/id_name auto-populated from params()
+  r_csm <- estimate_ATT(mtch, outcome = "Y",
+                        superpopulation = FALSE, use_common_variance = FALSE)
+  expect_s3_class(r_csm, "tbl_df")
+  expect_true(is.numeric(r_csm$S1_sq))
+  expect_false(is.na(r_csm$S1_sq))
+
+  # plain data frame: covs/scaling/metric/id_name/df must be supplied explicitly
+  plain_df <- result_table(mtch)
+  r_plain <- estimate_ATT(plain_df, outcome = "Y",
+                          superpopulation = FALSE, use_common_variance = FALSE,
+                          df = dat, covs = c("X1", "X2"),
+                          scaling = c(1/0.2, 1/0.2), metric = "maximum", id_name = "id")
+  expect_equal(r_plain$S1_sq, r_csm$S1_sq)
+
+  # explicit override on a csm_matches object takes precedence over params()
+  r_override <- estimate_ATT(mtch, outcome = "Y",
+                             superpopulation = FALSE, use_common_variance = FALSE,
+                             scaling = c(1000, 1))
+  expect_false(isTRUE(all.equal(r_override$S1_sq, r_csm$S1_sq)))
 })
 
 test_that("calculate_S1_sq_treated_to_treated: returns list with correct names", {

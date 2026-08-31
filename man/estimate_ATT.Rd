@@ -19,6 +19,11 @@ estimate_ATT(
   cluster_comb_mtd = "average",
   feasible_only = FALSE,
   df = NULL,
+  covs = NULL,
+  scaling = NULL,
+  metric = NULL,
+  id_name = NULL,
+  K = 1,
   ...
 )
 }
@@ -72,11 +77,22 @@ FALSE).}
 method and for \code{get_finite_variance()} when
 \code{use_common_variance = FALSE}.}
 
-\item{...}{Additional arguments passed to the chosen variance
-function. For \code{get_total_variance()}: e.g. \code{M} for
-'ai06'. For \code{get_finite_variance()}: e.g.
-\code{use_common_variance}, \code{K}, \code{covs},
-\code{scaling}.}
+\item{covs, scaling, metric, id_name}{Passed to
+\code{get_finite_variance()} (and on to
+\code{calculate_S1_sq_treated_to_treated()}) when
+\code{superpopulation = FALSE} and \code{use_common_variance =
+  FALSE}. If \code{matches} is a csm_matches object, any of these
+left \code{NULL} are filled in from \code{params(matches)};
+otherwise they must be supplied directly (required when
+\code{matches} is a plain data frame).}
+
+\item{K}{Number of treated neighbours for the treated-to-treated
+K-NN step, passed to \code{get_finite_variance()} when
+\code{use_common_variance = FALSE} (default 1).}
+
+\item{...}{Additional arguments passed to \code{get_total_variance()}
+when \code{superpopulation = TRUE}, e.g. \code{M} for the 'ai06'
+method.}
 }
 \value{
 A tibble with ATT estimate (ATT), standard error (SE),

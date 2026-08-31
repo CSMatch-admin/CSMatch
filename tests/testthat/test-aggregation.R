@@ -49,3 +49,24 @@ test_that("aggregation works", {
   expect_equal( cc$X2[[5]], X2 )
 
 })
+
+
+test_that("agg_co_units errors on a nonexistent outcome/treatment instead of silently ignoring it", {
+
+  mtch = list(
+    data.frame( id = c("T1", "C1", "C2"),
+                Z = c(1,0,0),
+                Y = c(5,2,3),
+                X1 = c(1,2,3),
+                X2 = c(4,5,6),
+                weights = c(1, 0.6, 0.4),
+                subclass = c("T1", "T1", "T1") )
+  )
+
+  expect_error( agg_co_units( mtch, outcome = "nonexistent_col" ) )
+  expect_error( agg_co_units( mtch, treatment = "nonexistent_col" ) )
+
+  # a valid call still keeps every column (not just covariates/outcome)
+  co <- agg_co_units( mtch, covariates = c("X1","X2"), outcome = "Y" )
+  expect_true( all( c("X1","X2","Y","Z") %in% names(co) ) )
+})

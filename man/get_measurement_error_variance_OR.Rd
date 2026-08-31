@@ -22,7 +22,7 @@ get_measurement_error_variance_OR(
 
 \item{treatment}{Name of the treatment variable (default: "Z")}
 
-\item{boot_mtd}{The bootstrap method to use. Options are "Bayesian", "wild", or "naive".}
+\item{boot_mtd}{The bootstrap method to use. Options are "Bayesian", "wild", "sign", or "naive".}
 
 \item{B}{Number of bootstrap samples (default: 250)}
 

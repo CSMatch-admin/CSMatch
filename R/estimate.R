@@ -250,7 +250,7 @@ get_pooled_variance <- function(
 #' @param matches A CSM match object (R S3 object) or data frame
 #' @param outcome Name of the outcome variable (default: "Y")
 #' @param treatment Name of the treatment variable (default: "Z")
-#' @param boot_mtd The bootstrap method to use. Options are "Bayesian", "wild", or "naive".
+#' @param boot_mtd The bootstrap method to use. Options are "Bayesian", "wild", "sign", or "naive".
 #' @param B Number of bootstrap samples (default: 250)
 #' @param use_moving_block Whether to use a moving block bootstrap (default: FALSE)
 #' @param seed_addition Additional seed value to ensure reproducibility (default: 11)
@@ -300,7 +300,7 @@ get_measurement_error_variance_OR <- function(matches,
   mean_tilde_tau <- mean(tilde_tau)
   tilde_tau_resids <- tilde_tau - mean_tilde_tau
 
-  if (boot_mtd %in% c("Bayesian", "wild", "naive")) {
+  if (boot_mtd %in% c("Bayesian", "wild", "sign", "naive")) {
     boot_ci <- make_bootstrap_ci(
       boot_mtd,
       use_moving_block = use_moving_block
@@ -317,7 +317,7 @@ get_measurement_error_variance_OR <- function(matches,
     CI_upper <- results$ci_upper
     sd_boot <- results$sd
   } else {
-    stop("boot_mtd must be one of: 'Bayesian', 'wild', 'naive'")
+    stop("boot_mtd must be one of: 'Bayesian', 'wild', 'sign', 'naive'")
   }
 
   # Calculate sample sizes
@@ -717,7 +717,7 @@ get_total_variance <- function(
       V_correction <- var_calc_df %>%
         filter(!!sym(treatment) == 0) %>%
         summarize(
-          V_correction_term = sum((total_wt^2 - total_wt_squared) * sample_var_cluster / N_T )
+          V_correction_term = sum((total_wt^2 - total_wt_squared) * rand_var_cluster / N_T )
         ) %>%
         pull(V_correction_term)
     } else {
@@ -827,11 +827,20 @@ get_total_variance <- function(
 #' @param df The *full* original data frame. Required for 'ai06'
 #'   method and for \code{get_finite_variance()} when
 #'   \code{use_common_variance = FALSE}.
-#' @param ... Additional arguments passed to the chosen variance
-#'   function. For \code{get_total_variance()}: e.g. \code{M} for
-#'   'ai06'. For \code{get_finite_variance()}: e.g.
-#'   \code{use_common_variance}, \code{K}, \code{covs},
-#'   \code{scaling}.
+#' @param covs,scaling,metric,id_name Passed to
+#'   \code{get_finite_variance()} (and on to
+#'   \code{calculate_S1_sq_treated_to_treated()}) when
+#'   \code{superpopulation = FALSE} and \code{use_common_variance =
+#'   FALSE}. If \code{matches} is a csm_matches object, any of these
+#'   left \code{NULL} are filled in from \code{params(matches)};
+#'   otherwise they must be supplied directly (required when
+#'   \code{matches} is a plain data frame).
+#' @param K Number of treated neighbours for the treated-to-treated
+#'   K-NN step, passed to \code{get_finite_variance()} when
+#'   \code{use_common_variance = FALSE} (default 1).
+#' @param ... Additional arguments passed to \code{get_total_variance()}
+#'   when \code{superpopulation = TRUE}, e.g. \code{M} for the 'ai06'
+#'   method.
 #' @return A tibble with ATT estimate (ATT), standard error (SE),
 #'   t-statistic (t), total variance (V), measurement error variance
 #'   (V_E), population heterogeneity variance (V_P), and other
@@ -865,6 +874,11 @@ estimate_ATT <- function(
     cluster_comb_mtd = "average",
     feasible_only = FALSE,
     df = NULL,
+    covs = NULL,
+    scaling = NULL,
+    metric = NULL,
+    id_name = NULL,
+    K = 1,
     ... ) {
 
   # Unpack CSM object or plain matched data frame
@@ -918,11 +932,13 @@ estimate_ATT <- function(
     if ( is.csm_matches( matches ) ) {
       df = full_unit_table(matches)
       pp = params(matches)
-      scaling = pp$scaling
-      covs = pp$covs
-      metric = pp$metric
-      id_name = pp$id_name
+      if (is.null(scaling)) scaling = pp$scaling
+      if (is.null(covs))    covs    = pp$covariates
+      if (is.null(metric))  metric  = pp$metric
+      if (is.null(id_name)) id_name = pp$id_name
     }
+    if (is.null(metric))  metric  = "maximum"
+    if (is.null(id_name)) id_name = "id"
     variance_results <- get_finite_variance(
       matches   = matches_df,
       outcome   = outcome,
@@ -930,6 +946,7 @@ estimate_ATT <- function(
       df        = df,
       homoskedastic = homoskedastic,
       use_common_variance = use_common_variance,
+      K = K,
       scaling = scaling,
       covs = covs,
       metric = metric,
@@ -1206,7 +1223,7 @@ get_finite_variance <- function(
     if ( is.csm_matches(matches) ) {
       df = full_unit_table(matches)
       pp          <- params(matches)
-      covs    <- pp$covs
+      covs    <- pp$covariates
       scaling <- pp$scaling
       metric  <- pp$metric
       id_name <- pp$id_name
