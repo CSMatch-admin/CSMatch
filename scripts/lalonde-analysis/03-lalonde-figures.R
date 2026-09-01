@@ -299,7 +299,7 @@ bad_tx %>%
 
 # Looking at impact as a function of caliper ----
 
-plt_imp <- impact_curve( lalonde_scm, outcome="Y" )
+plt_imp <- impact_plot( lalonde_scm, outcome="Y" )
 plt_imp
 
 imp_tbl <- attr( plt_imp, "table" )

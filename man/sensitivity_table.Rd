@@ -48,6 +48,11 @@ matches within the caliper)
 \details{
 These estimates can be used to assess sensitivity of results to
 different choices in matching and estimation.  Return results are from the \code{estimate_ATT()} method
+
+Note: this is not sensitivity in the sense of a Rosenbaum sensitivity
+analysis of unmeasured confounding, but rather sensitivity akin to
+sensitivity under differing modeling specifications and tuning
+parameter selections.
 }
 \examples{
 set.seed(4044440)

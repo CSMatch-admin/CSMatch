@@ -142,20 +142,28 @@ priority. Checked items are done; the rest are tracked for follow-up.
 
 ## Reuse / simplification / efficiency
 
-Per your review of these items (2026-08-31):
+Per your review of these items (2026-08-31), all now closed:
 
-- [ ] `compute_pairwise_shared_controls()`/`compute_shared_controls_per_treated()`
+- [x] `compute_pairwise_shared_controls()`/`compute_shared_controls_per_treated()`
       (calculate_overlap_stat.R) use O(N²) loops with per-pair
-      `intersect()`; reduce to one matrix multiply on a
-      treated×control incidence matrix. **No response given on this
-      one — needs a decision on whether to do it.**
-- [ ] `get_radius_size()`'s four branches are ~90% duplicated
+      `intersect()`; could reduce to one matrix multiply on a
+      treated×control incidence matrix. **Logged in `FUTURE_WORK.md`
+      per your call, not fixed now.**
+- [x] `get_radius_size()`'s four branches are ~90% duplicated
       boilerplate differing only in the final one-line computation.
-      **You pushed back: "it looks clean and tight... since all the
-      branches aren't the same this seems clean." — let's discuss.**
-- [ ] `set_NA_to_unmatched_co()` (matching.R) — per-row for-loop that
-      vectorizes cleanly. **You asked what this means — let's
-      discuss.**
+      **Left as-is** — on a second look the four branches
+      (`"adaptive"`, `"targeted"`, `"fixed"`, `"1nn"`/`"knn"`/`"knn-capped"`)
+      differ in more than a one-line formula (different
+      sorting/indexing logic per branch), so the original review
+      overstated this one; agreed it's fine as-is.
+- [x] `set_NA_to_unmatched_co()` (matching.R) — was a per-row for-loop
+      zeroing out `dm_uncapped` entries beyond each treated unit's
+      radius. **Fixed: vectorized to a single matrix comparison**
+      (`matrix(radius_sizes, nrow=, ncol=) `+ logical indexing),
+      with a `stopifnot` added guarding that `nrow(dm_uncapped) ==
+      length(radius_sizes)`. Verified byte-identical output vs. the
+      old loop (including a pre-existing-`NA` edge case) before
+      committing; existing regression test still passes.
 - [x] `sensitivity_table()`'s `include_distances` branch builds a full
       `distance_density_plot()` ggplot object purely to scrape its
       attached data table. **Per your call ("put in future... unclear
@@ -166,14 +174,21 @@ Per your review of these items (2026-08-31):
       **Fixed per your instruction: extracted `na_pairwise_overlap()`
       and `na_overlap_result()` internal helpers**
       (calculate_overlap_stat.R), all 4 call sites now use them.
-- [ ] `calculate_subclass_variances()` and the `s_t_sq_df` block inside
-      `calculate_s_j_sq()` independently reimplement near-identical
-      "variance per subclass" logic. **You want to discuss how to
-      align these — let's discuss.**
-- [ ] `feasible_plot()` refits `estimate_ATT()` from scratch once per
+- [x] `calculate_subclass_variances()` and the `s_t_sq_df` block inside
+      `calculate_s_j_sq()` independently reimplemented near-identical
+      "variance per subclass" logic. **Fixed per your "yes":**
+      `calculate_s_j_sq()` now filters to `treatment==0` + `n()>=2`
+      (matching `get_pooled_variance()`'s existing pattern) and calls
+      `calculate_subclass_variances()` directly, selecting/renaming
+      its `var_cluster` column to `s_t_sq` — same output shape as
+      before (`expect_named`/column checks in existing tests still
+      pass), one fewer independent implementation of "variance per
+      subclass."
+- [x] `feasible_plot()` refits `estimate_ATT()` from scratch once per
       cumulative subset of treated units — O(n) full recomputations.
-      **You're unsure it's worth fixing since it's not rematching —
-      let's discuss.**
+      **Logged in `FUTURE_WORK.md` per your call ("skip... might not
+      be major"), noting it's likely cheap since it's re-estimating
+      on an already-matched table (no rematching), but unbenchmarked.**
 
 ## Naming issues
 
@@ -244,28 +259,61 @@ history; ran full test suite + `R CMD check` clean after each batch:
 - [x] `get_distance_table` → renamed to `distance_table`, per your
       instruction. Fixed all call sites (R/, tests/, scripts/, incl.
       ferman/lalonde analysis scripts).
-- [ ] `sensitivity_table()`/`caliper_sensitivity_*` naming clash with
-      causal-inference "sensitivity analysis" — **no instruction given
-      on this one, left as-is.**
-- [ ] `bad_matches()` vs. `treatment_table(bad = TRUE)` — **investigated
+- [x] `sensitivity_table()`/`caliper_sensitivity_*` naming clash with
+      causal-inference "sensitivity analysis" — **left as-is per your
+      call** ("sensitivity is a broad term with modeling"). Added a
+      clarifying doc note to `sensitivity_table()` and to the shared
+      `caliper_sensitivity_table` topic (covering
+      `caliper_sensitivity_table()`/`caliper_sensitivity_plot()`/
+      `caliper_sensitivity_plot_statistics()`): "Note: this is not
+      sensitivity in the sense of a Rosenbaum sensitivity analysis of
+      unmeasured confounding, but rather sensitivity akin to
+      sensitivity under differing modeling specifications and tuning
+      parameter selections."
+- [x] `bad_matches()` vs. `treatment_table(bad = TRUE)` — investigated
       per your question: confirmed they're complementary, not
-      conflicting.** Both key off the same `adacal > threshold`
+      conflicting. Both key off the same `adacal > threshold`
       criterion; `treatment_table(bad = TRUE)` returns the
       treatment-level table for those units, `bad_matches()` returns
       the full matched-unit rows (treated + controls) for the same
       units. No change made; flagging one small asymmetry for
       awareness: `bad_matches()`'s `threshold` arg has no default,
       while `treatment_table(bad=TRUE)` defaults it to the caliper.
-- [ ] `gen_df_adv`/`gen_df_adv_k`/`gen_one_toy` hierarchy — **investigated
-      per your question:** `gen_df_adv()` is *not* dead/superseded — it's
-      actively used in tests and multiple scripts (including
-      `scripts/sims-bias_mse/` and `scripts/sims-variance/`) as the
-      fixed-2D-covariate DGP, distinct from `gen_df_adv_k()`'s general
-      k-dimensional version. Given that, this is a genuine naming
-      question, not a dead-code question — let's discuss what (if
-      anything) to rename.
-- [ ] Minor: `impact_curve` vs. `impact_table` inconsistent with the
-      `*_plot` suffix convention used elsewhere; remaining `get_`
-      prefix inconsistency (e.g. `sensitivity_table`/`caliper_table`
-      have no `get_` prefix, unlike some others) — **no instruction
-      given on the parts beyond the two renames above; left as-is.**
+- [ ] `gen_df_adv`/`gen_df_adv_k`/`gen_one_toy` hierarchy — investigated
+      per your question ("what happens at k=2 for adv_k vs. adv?"):
+      even at k=2 they are **not** equivalent —
+      (1) `gen_df_adv()`'s `Z` is numeric 0/1, `gen_df_adv_k()`'s `Z`
+      is logical `TRUE`/`FALSE`;
+      (2) `gen_df_adv()` supports an optional `f0_sd_fun` for
+      heteroskedastic noise (overriding constant `f0_sd`) —
+      `gen_df_adv_k()` has no such option, noise is always
+      homoskedastic;
+      (3) `gen_df_adv_k()` (and thus `gen_one_toy()`) additionally
+      returns `Y0_denoised`/`Y1_denoised`/`Y_denoised` columns (the
+      noiseless potential outcomes) that `gen_df_adv()` doesn't
+      expose;
+      (4) their `f0_fun`/`tx_effect_fun` arguments use incompatible
+      calling conventions — `function(X1, X2)` (two vectors) for
+      `gen_df_adv()` vs. `function(X)` (one matrix) for
+      `gen_df_adv_k()` — a function written for one can't be passed to
+      the other without a wrapper.
+      So `gen_df_adv_k()` is a parallel reimplementation, not a strict
+      superset, of `gen_df_adv()` — it gained denoised-outcome columns
+      but lost the heteroskedastic-noise option along the way. **Still
+      open: what to actually change** (better docs making this
+      divergence explicit vs. an actual rename vs. closing the feature
+      gaps to make one a true superset of the other) — need your call.
+- [x] `impact_curve` vs. `impact_table` inconsistent with the `*_plot`
+      suffix convention used elsewhere — **fixed: renamed
+      `impact_curve()` to `impact_plot()`** to match every other
+      plot-producing exported function (`caliper_distance_plot`,
+      `caliper_sensitivity_plot`, `caliper_sensitivity_plot_statistics`,
+      `distance_density_plot`, `ess_plot`, `feasible_plot`, `love_plot`,
+      `scm_vs_avg_distance_plot`); fixed its one external call site
+      (`scripts/lalonde-analysis/03-lalonde-figures.R`).
+      Remaining `get_` prefix inconsistency: already resolved as a
+      side effect of the `get_distance_table` → `distance_table`
+      rename above — no other exported table-fetching function still
+      carries a `get_` prefix (the only remaining exported `get_*`
+      functions are `get_cal_matches()` and the variance-estimator
+      family, both out of scope here).

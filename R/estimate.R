@@ -917,11 +917,16 @@ calculate_s_j_sq <- function(matches_table, outcome = "Y", treatment = "Z") {
   matches_table <- matches_table %>%
     mutate(id = as.character(id))
 
-  s_t_sq_df <- matches_table %>%
+  # Reuse the same per-subclass variance calculation get_pooled_variance()
+  # uses (calculate_subclass_variances()), rather than reimplementing it.
+  matches_filtered <- matches_table %>%
     filter(!!sym(treatment) == 0) %>%
     group_by(subclass) %>%
     filter(n() >= 2) %>%
-    summarise(s_t_sq = var(!!sym(outcome)), .groups = "drop")
+    ungroup()
+
+  s_t_sq_df <- calculate_subclass_variances(matches_filtered, outcome = outcome) %>%
+    dplyr::select(subclass, s_t_sq = var_cluster)
 
   s_j_sq_df <- matches_table %>%
     filter(!!sym(treatment) == 0) %>%

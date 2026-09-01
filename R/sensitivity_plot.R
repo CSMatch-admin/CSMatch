@@ -16,6 +16,10 @@
 #' These estimates can be used to assess sensitivity of results to
 #' different choices in matching and estimation.  Return results are from the `estimate_ATT()` method
 #'
+#' Note: this is not sensitivity in the sense of a Rosenbaum sensitivity
+#' analysis of unmeasured confounding, but rather sensitivity akin to
+#' sensitivity under differing modeling specifications and tuning
+#' parameter selections.
 #'
 #' @seealso [estimate_ATT()]
 #'
@@ -192,6 +196,10 @@ sensitivity_table <- function( csm,
 #' of the ATT and confidence interval for each point on the plot. Also
 #' can return table of results if 'return_table' is set to TRUE.
 #'
+#' Note: this is not sensitivity in the sense of a Rosenbaum sensitivity
+#' analysis of unmeasured confounding, but rather sensitivity akin to
+#' sensitivity under differing modeling specifications and tuning
+#' parameter selections (here, the caliper).
 #'
 #' @rdname caliper_sensitivity_table
 #'

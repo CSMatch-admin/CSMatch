@@ -127,12 +127,9 @@ get_matched_co_from_dm_trimmed <- function (data, dm_trimmed, treatment)
 }
 
 set_NA_to_unmatched_co <- function(dm_uncapped, radius_sizes){
-  ntx <- nrow(dm_uncapped)
-  for (i in 1:ntx) {
-    temp <- dm_uncapped[i,]
-    temp[temp > radius_sizes[i]] <- NA
-    dm_uncapped[i,] <- temp
-  }
+  stopifnot( nrow(dm_uncapped) == length(radius_sizes) )
+  radius_mat <- matrix( radius_sizes, nrow = nrow(dm_uncapped), ncol = ncol(dm_uncapped) )
+  dm_uncapped[ dm_uncapped > radius_mat ] <- NA
   return(dm_uncapped)
 }
 

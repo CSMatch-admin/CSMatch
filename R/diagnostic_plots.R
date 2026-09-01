@@ -477,9 +477,9 @@ love_plot <- function( csm, covs = NULL, covs_names = NULL ) {
 #'                         caliper = 1,
 #'                         rad_method = "adaptive",
 #'                         est_method = "csm")
-#' impact_curve(mtch, outcome = "Y")
+#' impact_plot(mtch, outcome = "Y")
 #' @export
-impact_curve <- function( csm, outcome, min_dist = TRUE, jitter = FALSE ) {
+impact_plot <- function( csm, outcome, min_dist = TRUE, jitter = FALSE ) {
 
   if ( is.csm_matches( csm ) ) {
     rsb = impact_table( csm=csm, outcome=outcome )

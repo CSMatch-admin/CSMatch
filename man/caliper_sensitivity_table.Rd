@@ -87,6 +87,11 @@ of the ATT and confidence interval for each point on the plot. Also
 can return table of results if 'return_table' is set to TRUE.
 }
 \details{
+Note: this is not sensitivity in the sense of a Rosenbaum sensitivity
+analysis of unmeasured confounding, but rather sensitivity akin to
+sensitivity under differing modeling specifications and tuning
+parameter selections (here, the caliper).
+
 \code{caliper_sensitivity_table()} generates the sensitivity
 table only.
 
