@@ -18,7 +18,6 @@ synth_qp <- function(X1, X0, V) {
   l <- c(1, numeric(n0))
   u <- c(1, rep(1, n0))
 
-  # browser()
   settings = osqp::osqpSettings(verbose = FALSE,
                                 eps_rel = 1e-8,
                                 eps_abs = 1e-8)
@@ -50,7 +49,6 @@ synth_lp <- function(X1, X0, V) {
   dir <- c("=", rep("<=", 2*p))
   rhs <- c(1, -VX1T, VX1T)
 
-  # browser()
   sol <- lpSolve::lp(objective.in = obj,
                      const.mat = con_mat,
                      const.dir = dir,
@@ -74,6 +72,8 @@ gen_sc_weights <- function(d,
   # edge cases
   if (nrow(d) == 0) {
     return(tibble())
+  } else if (nrow(d) == 1) {
+    stop("gen_sc_weights(): treated unit has zero matched controls, so no synthetic control can be formed. Filter out infeasible/unmatched treated units before aggregating/estimating.")
   } else if (nrow(d) == 2) {
     return(d %>%
              mutate(unit = c("tx1", "c1"),
@@ -130,13 +130,28 @@ gen_sc_weights <- function(d,
     stop("Linear program for L1-distance minimization is not currently implemented.")
   }
 
-  # Drop tiny weights
-  sol[ sol < 1e-6 ] <- 0
-  sol <- sol / sum(sol)
+  sol <- normalize_sc_weights(sol)
 
   d %>%
     mutate(unit = c("tx1", paste0("c", 1:(n()-1))),
            weights = c(1, sol))
+}
+
+
+#' Drop near-zero synthetic control weights and renormalize to sum to 1
+#'
+#' @param sol Raw QP/LP solution vector of control weights.
+#' @return `sol` with entries below 1e-6 zeroed out, renormalized to
+#'   sum to 1. Errors instead of silently returning `NaN` if every
+#'   entry is (near-)zero, which would otherwise indicate a
+#'   degenerate QP/LP solve (e.g. solver infeasibility).
+#' @noRd
+normalize_sc_weights <- function(sol) {
+  sol[ sol < 1e-6 ] <- 0
+  if ( sum(sol) == 0 ) {
+    stop("gen_sc_weights(): the synthetic control solve returned all-(near-)zero weights, so weights cannot be normalized (would divide by zero). This usually indicates a degenerate QP/LP solve.")
+  }
+  sol / sum(sol)
 }
 
 

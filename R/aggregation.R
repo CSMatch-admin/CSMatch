@@ -102,7 +102,15 @@ agg_sc_units <- function(scweights,
     group_by(subclass, .data[[treatment]] ) %>%
     summarize(across( all_of( cc ),
                      ~sum(.x * weights)),
-              .groups="drop_last") %>%
+              .groups="drop_last")
+
+  # Each subclass should have exactly one treated row and one
+  # aggregated-control row; anything else (most commonly an unmatched
+  # treated unit with zero controls) breaks the id-assignment below,
+  # so fail with a clear message rather than a confusing recycling error.
+  assert_two_rows_per_subclass( rs, treatment )
+
+  rs <- rs %>%
     mutate(id = c(NA, subclass[1]), .before="subclass") %>%
     mutate(weights = 1) %>%
     ungroup()
@@ -112,6 +120,32 @@ agg_sc_units <- function(scweights,
   rs$id[ is.na(rs$id) ] <- paste0( rs$subclass[ is.na(rs$id) ], "_syn" )
 
   rs
+}
+
+
+#' Validate exactly 2 rows (one per treatment level) per subclass
+#'
+#' `agg_sc_units()`/`agg_avg_units()` assign per-subclass ids via
+#' `c(NA, subclass[1])`, which silently misbehaves (a confusing
+#' dplyr recycling error) unless every subclass group has exactly 2
+#' rows. Most commonly caused by an unmatched treated unit with zero
+#' matched controls.
+#'
+#' @noRd
+assert_two_rows_per_subclass <- function( rs, treatment ) {
+  bad_subclass <- rs %>%
+    filter( dplyr::n() != 2 ) %>%
+    dplyr::pull( subclass ) %>%
+    unique()
+
+  if ( length(bad_subclass) > 0 ) {
+    stop( sprintf(
+      "Expected exactly one treated and one control row per subclass (after aggregating by '%s'); subclass(es) %s have a different count. This usually means a treated unit has zero matched controls (e.g. an infeasible/unmatched unit) -- filter it out (e.g. via feasible_only) before aggregating.",
+      treatment, paste( bad_subclass, collapse=", " )
+    ) )
+  }
+
+  invisible(TRUE)
 }
 
 
@@ -173,7 +207,11 @@ agg_avg_units <- function(scweights,
     group_by( subclass, .data[[treatment]] ) %>%
     summarize( across( all_of( cc ),
                      ~sum(.x * 1/n())),
-               .groups = "drop_last" ) %>%
+               .groups = "drop_last" )
+
+  assert_two_rows_per_subclass( rs, treatment )
+
+  rs <- rs %>%
     mutate(id = c(NA, subclass[1]), .before="subclass") %>%
     mutate(weights = 1) %>%
     ungroup()

@@ -118,23 +118,6 @@ gen_df_adv <- function(nc, nt,
   return(res)
 }
 
-if (F) {
-  df <- gen_df_adv(
-    nc=nc,
-    nt=nt,
-    f0_sd = f0_sd,
-    tx_effect_fun = function(X1, X2) {1},
-    f0_fun = function(x,y) {
-      matrix(c(x,y), ncol=2) %>%
-        mvtnorm::dmvnorm(mean = c(0.5,0.5),
-                         sigma = matrix(c(1,0.8,0.8,1), nrow=2))}) %>%
-    mutate(X3 = X1*X2)
-  df %>%
-    ggplot(aes(X1,X2)) +
-    geom_point(aes(color=Y0)) +
-    facet_wrap(~Z)
-}
-
 
 #' Generate k-dimensional blobs around specified centers
 #' (Helper function replacing the original 2D gen_toy_covar)
@@ -417,10 +400,6 @@ gen_df_hain <- function(nt = 50,
   } else if (outcome == "nl2") {
     df <- df %>%
       mutate(Y0 = (V1 + V2 + V5)^2 + rnorm(NUMSAMP, sd=sigma_y))
-  } else if (outcome == "nl3") {   # not in paper
-    df <- df %>%
-      mutate(Y0 = V1*V2 + V2*V5 + V1*V5 + 3*cos(V3) + 2*sin(V2) +
-               V3*V4 + 0.5*V4^2 + rnorm(NUMSAMP, sd=sigma_y))
   }
   df <- df %>%
     mutate(Y1 = Y0 + ATE,
@@ -588,23 +567,6 @@ gen_df_kang <- function(n=1000) {
                       prob=c(e,1-e))) %>%
     ungroup() %>%
     mutate(id = 1:n, .before=V1)
-}
-
-
-if (F) {
-  gen_df_acic(n=1000, p=10)
-
-  input_2016[,1:10] %>%
-    sample_n(1000,replace=F) %>%
-    dgp_2016(
-      parameters = list(
-        model.trt="linear",
-        root.trt=0.35,
-        overlap.trt="full",
-        model.rsp="linear",
-        alignment=0.75,
-        te.hetero="none"),
-      random.seed=1)
 }
 
 

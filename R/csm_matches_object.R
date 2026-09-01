@@ -2,6 +2,13 @@
 # The various methods for the csm_matches object
 
 
+# Tolerance for treating a match distance as "exact" (dist == 0 up to
+# floating point noise). Shared by print.csm_matches() and
+# result_table(return = "exact") so the two can't disagree on which
+# units count as exact matches.
+EXACT_MATCH_TOL <- 100 * .Machine$double.eps
+
+
 
 #' csm_matches object accessors
 #'
@@ -130,7 +137,7 @@ print.csm_matches <- function(x, ...) {
     nco = n_distinct( mtch$id )
 
     mex <- mtch %>%
-      filter( abs(dist) < 10*.Machine$double.eps )
+      filter( abs(dist) < EXACT_MATCH_TOL )
     n_exact = n_distinct( mex$subclass )
   } else {
     nco = 0
@@ -518,7 +525,7 @@ result_table <- function( csm,
                agg_co_units = agg_co_units(csm,outcome=outcome),
                all          = bind_rows(csm$matches),
                exact        = bind_rows(csm$matches) %>%
-                 filter( abs(dist) < 100*.Machine$double.eps )
+                 filter( abs(dist) < EXACT_MATCH_TOL )
   )
 
   # Deal with empty result table if nothing is matched.

@@ -70,3 +70,28 @@ test_that("agg_co_units errors on a nonexistent outcome/treatment instead of sil
   co <- agg_co_units( mtch, covariates = c("X1","X2"), outcome = "Y" )
   expect_true( all( c("X1","X2","Y","Z") %in% names(co) ) )
 })
+
+
+test_that("agg_sc_units/agg_avg_units error clearly on an unmatched treated unit", {
+
+  # T1 has zero matched controls -- only one row (Z=1) in its
+  # subclass, breaking the "2 rows per subclass" assumption.
+  mtch = list(
+    data.frame( id = c("T1"),
+                Z = c(1),
+                Y = c(5),
+                X1 = c(1),
+                X2 = c(4),
+                weights = c(1),
+                subclass = c("T1") )
+  )
+
+  expect_error(
+    agg_sc_units( mtch, covariates = c("X1","X2"), outcome = "Y" ),
+    "T1"
+  )
+  expect_error(
+    agg_avg_units( mtch, covariates = c("X1","X2"), outcome = "Y" ),
+    "T1"
+  )
+})

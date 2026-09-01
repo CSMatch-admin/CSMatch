@@ -1,18 +1,5 @@
 
 # functions to generate diagnostic plots
-create_toy_df_plot <- function(toy_df) {
-  toy_df_plot <- toy_df %>%
-    mutate(Z = factor(Z, levels = c(FALSE, TRUE),
-                      labels = c("Control", "Treatment"))) %>%
-    ggplot(aes(x = X1, y = X2, col=as.factor(Z))) +
-    geom_point() +
-    # scale_color_continuous(low = "blue", high = "orange") +
-    theme_classic() +
-    labs(x = TeX("$X_1$"),
-         y = TeX("$X_2$"),
-         color = "Group")
-  return(toy_df_plot)
-}
 
 
 # Exploring distances -----
@@ -62,18 +49,6 @@ caliper_distance_plot <- function( csm, tops = 1:3, caliper = NULL,
   # Extract distance matrix from slot
   dist_matrix <- data.frame(t(as.matrix(csm$dm_uncapped)))
   dm_col_sorted <- apply(dist_matrix, 2, sort)
-
-  # Updated plotting function to show the "hard to match" units
-  plot_dm <- function(dist_to_plot){
-    tibble(d = as.numeric(as.matrix(dist_to_plot))) %>%
-      filter(d < 10) %>% # Filter out exact match dummies (1000), keep adaptive ones (~2.6)
-      ggplot(aes(d)) +
-      geom_histogram(color="black", binwidth=0.1) +
-      geom_vline(xintercept = lalonde_params$caliper, col="red") +
-      theme_classic() +
-      labs(y=NULL, x = TeX("$d(X_t, X_j)$")) +
-      theme(axis.ticks.y = element_blank(), axis.text.y = element_blank())
-  }
 
   # Top 1, 2, 3 distances
   dists <- dm_col_sorted[tops,] %>%
@@ -345,31 +320,6 @@ scm_vs_avg_distance_plot <- function(csm) {
     gen_dm(scaling = scaling,
            metric = metric) %>%
     diag()
-
-
-  # identify places where average does better than sc
-  #  (this should never happen)
-  if (F) {
-    ids <- feasible %>%
-      agg_sc_units() %>%
-      filter(!is.na(id)) %>%
-      pull(id)
-    tibble(sc_dists = sc_dists,
-           avg_dists = avg_dists) %>%
-      mutate(id = ids) %>%
-      filter(sc_dists > avg_dists) %>%
-      print(n=30)
-
-    foo <- 153
-    feasible %>%
-      filter(subclass == foo)
-    feasible %>%
-      agg_sc_units() %>%
-      filter(subclass == foo)
-    feasible %>%
-      agg_avg_units() %>%
-      filter(subclass == foo)
-  }
 
   # TODO: simple plot comparing distance between:
   #  - tx unit and simple average control

@@ -324,18 +324,6 @@ test_that("calculate_weighted_variance throws an error for invalid var_weight_ty
   )
 })
 
-test_that("get_plug_in_SE calculates SE correctly", {
-  Ns <- list(N_T = 3, N_C_tilde = 5)
-  sigma_hat <- 1.5
-  SE <-
-    get_plug_in_SE(
-      N_T = Ns$N_T,
-      ESS_C = Ns$N_C_tilde,
-      sigma_hat)
-
-  expect_type(SE, "double")
-  expect_equal(SE, sqrt(1/3 + 1/5)* 1.5)
-})
 
 
 

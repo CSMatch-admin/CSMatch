@@ -60,61 +60,85 @@ priority. Checked items are done; the rest are tracked for follow-up.
       been removed from `love_plot()` itself, resolving the
       "`love_plot(B=...)` incomplete" item below as a side effect).
 
-## Other confirmed bugs (not yet actioned)
+## Other confirmed bugs — fixed 2026-08-31
 
-- [ ] `agg_sc_units()`/`agg_avg_units()` (aggregation.R) hard-assume
-      exactly 2 rows per subclass group after grouping; degrade
-      ungracefully if a subclass ever produces a different count.
-- [ ] `gen_sc_weights()` (synthetic_control.R) can silently divide by
-      zero (`sol / sum(sol)`) producing `NaN` weights with no warning
-      if a QP/LP solve returns all-near-zero weights; the
-      zero-controls edge case isn't special-cased like the
-      one-control case is.
-- [ ] Inconsistent "exact match" tolerance constants: `print.csm_matches()`
-      uses `10*.Machine$double.eps`, `result_table(return="exact")`
-      uses `100*.Machine$double.eps` — same concept, two different
-      magic constants, can disagree on unit counts.
+- [x] `agg_sc_units()`/`agg_avg_units()` (aggregation.R) hard-assumed
+      exactly 2 rows per subclass group after grouping (most commonly
+      broken by an unmatched treated unit with zero controls),
+      producing a confusing dplyr recycling error. **Fixed: added a
+      shared `assert_two_rows_per_subclass()` check that errors
+      clearly up front**; added a regression test.
+- [x] `gen_sc_weights()` (synthetic_control.R) could silently divide
+      by zero (`sol / sum(sol)`) producing `NaN` weights with no
+      warning if a QP/LP solve returned all-near-zero weights, and
+      didn't special-case zero controls the way it special-cased one
+      control. **Fixed: added a zero-controls case that errors
+      clearly; extracted the drop-tiny-weights/renormalize step into
+      `normalize_sc_weights()`, which now errors instead of dividing
+      by zero**; added regression tests. Also removed two stray
+      `# browser()` lines encountered in the same file (see "Dead
+      code" below).
+- [x] Inconsistent "exact match" tolerance constants: `print.csm_matches()`
+      used `10*.Machine$double.eps`, `result_table(return="exact")`
+      used `100*.Machine$double.eps` — same concept, two different
+      magic constants, could disagree on unit counts. **Fixed: unified
+      on a single `EXACT_MATCH_TOL` constant** (csm_matches_object.R),
+      used in both places.
 - [x] `love_plot(B = ...)` — resolved: the `B` parameter and its
       `boot_bayesian_covs()` call were removed from `love_plot()`
       entirely (see bug #8 above).
-- [ ] `get_total_variance(variance_method = "ai06")` calls
-      `get_variance_AI06()`, which doesn't exist anywhere. Documented
-      as incomplete in `?get_total_variance`.
-- [ ] `gen_df_hain()`'s `outcome` param is restricted by `match.arg()`
-      to `c("linear","nl1","nl2")`, but the function body has a
-      dead `else if (outcome == "nl3")` branch that can never be
-      reached.
+- [x] `get_total_variance(variance_method = "ai06")` calling
+      `get_variance_AI06()` (which doesn't exist) — **already resolved
+      prior to this TODO file** (commit `ce2c390`, per your own
+      earlier decision to "leave it with a note in the docs saying
+      it is incomplete"): it now throws a clear `stop()` up front and
+      `?get_total_variance` documents it as incomplete. No further
+      action taken.
+- [x] `gen_df_hain()`'s `outcome` param is restricted by `match.arg()`
+      to `c("linear","nl1","nl2")`, but the function body had a
+      dead `else if (outcome == "nl3")` branch that could never be
+      reached. **Removed.**
 
-## Needs a decision
+## Needs a decision — resolved 2026-08-31
 
-- [ ] **`R/supplement_functions_to_check.R`** — recently-added file
-      defining `boot_bayesian_covs()` (stub that errors) and
-      `boot_bayesian()` (real but currently unreferenced). Decide:
-      integrate properly (would unblock `love_plot(B=...)`), move to
-      `scripts/`, or delete.
+- [x] **`R/supplement_functions_to_check.R`** — deleted per your
+      decision. Verified `boot_bayesian()`/`boot_bayesian_covs()` had
+      no live callers anywhere in `R/`, `tests/`, or `scripts/` (the
+      similarly-named things in `tests/testthat/old/test_bootstrap.R`
+      and `scripts/boot/boot_CSM_simulation_code.R` define their own
+      unrelated same-named functions).
 
-## Dead code to remove
+## Dead code — removed 2026-08-31
 
-- [ ] `create_toy_df_plot()` (diagnostic_plots.R) — unexported, unused
-      anywhere.
-- [ ] `scm_vs_avg_distance_plot()`'s `if (F) {...}` debug block
-      (diagnostic_plots.R) — references undefined `feasible`.
-- [ ] Nested `plot_dm()` helper inside `caliper_distance_plot()`
-      (diagnostic_plots.R) — never called; references undefined
-      `lalonde_params`.
-- [ ] ~55 lines of commented-out `get_se_AE_table`/`get_se_AE`
+- [x] `create_toy_df_plot()` (diagnostic_plots.R) — unexported, unused
+      anywhere. Removed.
+- [x] `scm_vs_avg_distance_plot()`'s `if (F) {...}` debug block
+      (diagnostic_plots.R) — referenced undefined `feasible`. Removed.
+- [x] Nested `plot_dm()` helper inside `caliper_distance_plot()`
+      (diagnostic_plots.R) — never called; referenced undefined
+      `lalonde_params`. Removed (also dropped `lalonde_params` from
+      `globalVariables()` since nothing references it anymore).
+- [x] ~55 lines of commented-out `get_se_AE_table`/`get_se_AE`
       (estimate.R) — superseded by `get_measurement_error_variance`/
-      `estimate_ATT`.
-- [ ] `get_plug_in_SE()` (estimate.R) — original author's own comment
-      says "This should be removed, I think."
-- [ ] Dev-scratch `if (F) {...}` blocks in sim_data.R (reference
-      undefined top-level objects).
-- [ ] Stray `# browser()` lines in synthetic_control.R.
-- [ ] Six unused/duplicate helpers in utils.R (`logit`, `invlogit`,
-      `expit`, `rmse`, `weighted_var`, `weighted_se`) — `expit()` is a
-      byte-for-byte duplicate of `invlogit()`; neither is called
-      anywhere (the one place the package needs inverse-logit uses
-      `rje::expit()` instead).
+      `estimate_ATT`. Removed.
+- [x] `get_plug_in_SE()` (estimate.R) — original author's own comment
+      said "This should be removed, I think." Removed, along with its
+      now-orphaned test in test-estimate.R. (Note: still used via
+      `CSMatch:::get_plug_in_SE()` in `scripts/draft-inference-scripts/`
+      — those are unmaintained draft scripts per CLAUDE.md and were
+      left as-is, not fixed up.)
+- [x] Dev-scratch `if (F) {...}` blocks in sim_data.R (referenced
+      undefined top-level objects `nc`/`nt`/`f0_sd`/`input_2016`/
+      `dgp_2016`). Removed both.
+- [x] Stray `# browser()` lines in synthetic_control.R. Removed both.
+- [x] Unused/duplicate helpers in utils.R: removed `logit`, `expit`,
+      `rmse`, `weighted_var`, `weighted_se` (all confirmed to have zero
+      callers anywhere in `R/`, `tests/`, or `scripts/`). **Correction
+      to this item's original description: `invlogit()` was kept** —
+      unlike the others it *is* actually called, via
+      `CSMatch:::invlogit()` in `scripts/lib/wrappers.R` (a live,
+      tracked script, not one of the `old/`/draft ones); the original
+      code review missed this `:::`-qualified call site.
 
 ## Reuse / simplification / efficiency
 
