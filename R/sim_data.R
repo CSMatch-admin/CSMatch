@@ -38,6 +38,13 @@ gen_toy_covar <- function(n, X1_ctrs, X2_ctrs, SD) {
 #'
 #' generate data mostly in grid (0,1) x (0,1)
 #'
+#' This is the fixed-2D-covariate special case of [gen_df_adv_k()]
+#' (`k = 2`), implemented as a thin wrapper around it so the two share
+#' one underlying DGP implementation. `f0_fun`/`tx_effect_fun`/
+#' `f0_sd_fun` here use the `function(X1, X2)` calling convention
+#' (rather than `gen_df_adv_k()`'s single k-column-matrix
+#' `function(X)`), for backward compatibility with existing callers.
+#'
 #' @param nc (something)
 #' @param nt (something)
 #' @param f0_sd degree of residual noise (default homoskedastic)
@@ -50,7 +57,10 @@ gen_toy_covar <- function(n, X1_ctrs, X2_ctrs, SD) {
 #' @param prop_nc_unif proportion of uniform controls. lower means
 #'   worse overlap
 #'
-#' @return A tibble containing a toy dataset
+#' @return A tibble containing a toy dataset. `Z` is numeric (0/1).
+#'   Also includes the `Y0_denoised`/`Y1_denoised`/`Y_denoised`
+#'   (noiseless potential outcome) columns that [gen_df_adv_k()]
+#'   produces.
 #' @examples
 #' dat <- gen_df_adv(nc = 100, nt = 10)
 #' dim(dat)
@@ -64,59 +74,27 @@ gen_df_adv <- function(nc, nt,
                        cluster_dist = 0.5,
                        prop_nc_unif = 1/3
 ) {
-  SD <- 0.1
-
-  c1 <- 0.5 - cluster_dist/2
-  c2 <- 0.5 + cluster_dist/2
-
-  # nt tx units clustered at (0.25,0.25) and (0.75,0.75)
-  #     which translates to X1_ctrs=(0.25,0.75) and X2_ctrs=(0.25,0.75)
-  dat_txblobs <-
-    gen_toy_covar(nt, X1_ctrs=c(c1,c2), X2_ctrs=c(c1,c2), SD)
-  dat_txblobs$Z <- 1
-
-  nc_unif <- ceiling(nc * prop_nc_unif)
-  # (nc-nc_unif) co units clustered at (0.75,0.25) and (0.25,0.75)
-  #     which translates to X1_ctrs=(0.75,0.25) and X2_ctrs=(0.25,0.75)
-  dat_coblobs <-
-    gen_toy_covar(
-      nc-nc_unif,
-      X1_ctrs=c(c2,c1),
-      X2_ctrs=c(c1,c2),
-      SD)
-  dat_coblobs$Z <- 0
-
-  # nc_unif co units uniformly scattered on (0,1) box to give some
-  #   randomly good controls
-  dat_conear <- tibble(
-    X1 = runif(nc_unif),
-    X2 = runif(nc_unif),
-    Z  = 0
-  )
-
-  dat <- bind_rows(dat_txblobs,
-                   dat_coblobs,
-                   dat_conear)
-
-  # Make residual variation function if none supplied
-  if ( is.null( f0_sd_fun ) ) {
-    f0_sd_fun <- function(X1, X2) { f0_sd }
-  } else {
+  if ( !is.null( f0_sd_fun ) ) {
     stopifnot( length( formals( f0_sd_fun ) ) == 2 )
   }
 
-  res <- dat %>%
-    mutate(noise = rnorm(n(),
-                         mean=0,
-                         sd=f0_sd_fun(X1,X2)
-                           )) %>%
-    mutate(Y0 = f0_fun(X1,X2) + noise) %>%
-    mutate(Y1 = Y0 + tx_effect_fun(X1,X2),
-           Y  = ifelse(Z, Y1, Y0)) %>%
-    mutate(id = 1:n(), .before=X1)
-  # print(paste0("SD of control outcomes: ", round(sd(res$Y0),4)))
+  wrap_xy <- function(fn) function(X) fn(X[, 1], X[, 2])
 
-  return(res)
+  res <- gen_df_adv_k(
+    nc = nc, nt = nt, k = 2,
+    f0_sd = f0_sd,
+    f0_fun = wrap_xy(f0_fun),
+    tx_effect_fun = wrap_xy(tx_effect_fun),
+    f0_sd_fun = if (is.null(f0_sd_fun)) NULL else wrap_xy(f0_sd_fun),
+    cluster_dist = cluster_dist,
+    prop_nc_unif = prop_nc_unif
+  )
+
+  # Preserve gen_df_adv()'s historical column order for the columns it
+  # has always returned; gen_df_adv_k()'s additional *_denoised columns
+  # trail at the end.
+  res %>%
+    dplyr::relocate(id, X1, X2, Z, noise, Y0, Y1, Y)
 }
 
 
@@ -183,10 +161,14 @@ gen_toy_covar_k <- function(n, centers, k, sd) {
 #' @param f0_sd Standard deviation of the noise term.
 #' @param f0_fun Function for baseline potential outcome Y0 (expects k-dim matrix X).
 #' @param tx_effect_fun Function for treatment effect (expects k-dim matrix X).
+#' @param f0_sd_fun Function of the k-dim matrix X to generate noise
+#'   standard deviation (heteroskedastic noise). Default is NULL. If
+#'   not NULL, overrides `f0_sd`.
 #' @param cluster_dist Distance parameter influencing cluster separation.
 #' @param prop_nc_unif Proportion of control units drawn uniformly from the \eqn{[0,1]^k} box.
 #'
-#' @return A tibble containing a k-dimensional toy dataset.
+#' @return A tibble containing a k-dimensional toy dataset. `Z` is
+#'   numeric (0/1).
 #' @examples
 #' dat <- gen_df_adv_k(nc = 100, nt = 10, k = 3)
 #' dim(dat)
@@ -197,9 +179,13 @@ gen_df_adv_k <- function(nc, nt, k, # Added k
                          # Default functions now expect matrix X
                          f0_fun = function(X) { rep(1, nrow(X)) },
                          tx_effect_fun = function(X) { rep(1, nrow(X)) },
+                         f0_sd_fun = NULL,
                          cluster_dist = 0.5,
                          prop_nc_unif = 1/3
 ) {
+  if ( !is.null(f0_sd_fun) ) {
+    stopifnot( length( formals( f0_sd_fun ) ) == 1 )
+  }
 
   SD <- 0.1 # Base SD for blobs
 
@@ -217,12 +203,12 @@ gen_df_adv_k <- function(nc, nt, k, # Added k
 
   # Generate treated blobs
   dat_txblobs <- gen_toy_covar_k(nt, centers = tx_centers, k = k, sd = SD)
-  if (nrow(dat_txblobs) > 0) dat_txblobs$Z <- TRUE
+  if (nrow(dat_txblobs) > 0) dat_txblobs$Z <- 1
 
   # Generate control blobs
   nc_blob <- nc - ceiling(nc * prop_nc_unif)
   dat_coblobs <- gen_toy_covar_k(nc_blob, centers = co_centers, k = k, sd = SD)
-  if (nrow(dat_coblobs) > 0) dat_coblobs$Z <- FALSE
+  if (nrow(dat_coblobs) > 0) dat_coblobs$Z <- 0
 
   # Generate uniform controls in [0,1]^k
   nc_unif <- ceiling(nc * prop_nc_unif)
@@ -230,12 +216,12 @@ gen_df_adv_k <- function(nc, nt, k, # Added k
     unif_matrix <- matrix(runif(nc_unif * k), ncol = k)
     dat_conear <- tibble::as_tibble(unif_matrix, .name_repair = "universal_quiet")
     colnames(dat_conear) <- paste0("X", 1:k)
-    dat_conear$Z <- FALSE
+    dat_conear$Z <- 0
   } else {
     # Create an empty tibble with correct columns if nc_unif is 0
     col_names <- paste0("X", 1:k)
     named_list <- setNames(replicate(k, numeric(), simplify = FALSE), col_names)
-    dat_conear <- tibble(!!!named_list, Z = logical())
+    dat_conear <- tibble(!!!named_list, Z = numeric())
   }
 
   # Combine data
@@ -248,9 +234,10 @@ gen_df_adv_k <- function(nc, nt, k, # Added k
 
   f0_vals <- f0_fun(X_matrix)
   tx_vals <- tx_effect_fun(X_matrix)
+  noise_sd <- if (is.null(f0_sd_fun)) f0_sd else f0_sd_fun(X_matrix)
 
   res <- dat %>%
-    mutate(noise = rnorm(n(), 0, f0_sd)) %>%
+    mutate(noise = rnorm(n(), 0, noise_sd)) %>%
     mutate(
       Y0_denoised = f0_vals,
       Y0 = f0_vals + noise,

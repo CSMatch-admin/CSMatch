@@ -33,7 +33,7 @@ test_that("basic object functionality", {
   a = mtch[ 1, ]
   expect_true( is.data.frame( a ) )
 
-  expect_true( mtch[[ 1, 4 ]] )
+  expect_equal( mtch[[ 1, 4 ]], 1 )  # Z is numeric (0/1), not logical
 
   dim(mtch)
   expect_true( is.numeric( dim( mtch )[1] ) )

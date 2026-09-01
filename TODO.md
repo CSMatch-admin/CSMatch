@@ -279,30 +279,34 @@ history; ran full test suite + `R CMD check` clean after each batch:
       units. No change made; flagging one small asymmetry for
       awareness: `bad_matches()`'s `threshold` arg has no default,
       while `treatment_table(bad=TRUE)` defaults it to the caliper.
-- [ ] `gen_df_adv`/`gen_df_adv_k`/`gen_one_toy` hierarchy — investigated
-      per your question ("what happens at k=2 for adv_k vs. adv?"):
-      even at k=2 they are **not** equivalent —
-      (1) `gen_df_adv()`'s `Z` is numeric 0/1, `gen_df_adv_k()`'s `Z`
-      is logical `TRUE`/`FALSE`;
-      (2) `gen_df_adv()` supports an optional `f0_sd_fun` for
-      heteroskedastic noise (overriding constant `f0_sd`) —
-      `gen_df_adv_k()` has no such option, noise is always
-      homoskedastic;
-      (3) `gen_df_adv_k()` (and thus `gen_one_toy()`) additionally
-      returns `Y0_denoised`/`Y1_denoised`/`Y_denoised` columns (the
-      noiseless potential outcomes) that `gen_df_adv()` doesn't
-      expose;
-      (4) their `f0_fun`/`tx_effect_fun` arguments use incompatible
-      calling conventions — `function(X1, X2)` (two vectors) for
-      `gen_df_adv()` vs. `function(X)` (one matrix) for
-      `gen_df_adv_k()` — a function written for one can't be passed to
-      the other without a wrapper.
-      So `gen_df_adv_k()` is a parallel reimplementation, not a strict
-      superset, of `gen_df_adv()` — it gained denoised-outcome columns
-      but lost the heteroskedastic-noise option along the way. **Still
-      open: what to actually change** (better docs making this
-      divergence explicit vs. an actual rename vs. closing the feature
-      gaps to make one a true superset of the other) — need your call.
+- [x] `gen_df_adv`/`gen_df_adv_k`/`gen_one_toy` hierarchy — **merged, per
+      your call ("functionality should be merged, Z should be
+      numerical regardless").** `gen_df_adv_k()` is now the one real
+      implementation: gained `f0_sd_fun` support (heteroskedastic
+      noise, matrix-style `function(X)` convention) for feature parity
+      with the old `gen_df_adv()`, and its `Z` is now numeric 0/1
+      (was logical `TRUE`/`FALSE`) — this fix also flows through to
+      `gen_one_toy()`, which already delegated to `gen_df_adv_k()`.
+      `gen_df_adv()` is now a thin wrapper around
+      `gen_df_adv_k(k = 2, ...)`: it converts its
+      `function(X1, X2)`-style `f0_fun`/`tx_effect_fun`/`f0_sd_fun`
+      callbacks into `gen_df_adv_k()`'s `function(X)` matrix
+      convention, then relocates columns so its historical column
+      order (`id, X1, X2, Z, noise, Y0, Y1, Y`) is preserved, with
+      `gen_df_adv_k()`'s additional `*_denoised` columns trailing —
+      kept as a separate name/signature rather than removed, since
+      it's actively called with that `(X1, X2)` signature across many
+      scripts (`toy_large_or_lm.R`, `sims-bias_mse*`,
+      `sims-variance/debug_parallel_sim_inference.R`, etc.) and this
+      way none of them needed to change. Found and fixed one test that
+      hard-coded the old logical-`Z` expectation
+      (`test-csm_matches_object.R`). Verified: full test suite (365
+      pass) and, separately, the slow/`RUN_SLOW_TESTS=TRUE` suite —
+      the 3 failures there (`test-het-sigma-sim.R`, coverage-rate
+      assertions returning `NaN`) are **pre-existing**, confirmed by
+      reproducing them identically on the pre-merge commit; unrelated
+      to this change, not fixed (flagging for your awareness, not
+      something I touched).
 - [x] `impact_curve` vs. `impact_table` inconsistent with the `*_plot`
       suffix convention used elsewhere — **fixed: renamed
       `impact_curve()` to `impact_plot()`** to match every other

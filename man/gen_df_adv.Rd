@@ -40,10 +40,21 @@ better overlap}
 worse overlap}
 }
 \value{
-A tibble containing a toy dataset
+A tibble containing a toy dataset. \code{Z} is numeric (0/1).
+Also includes the \code{Y0_denoised}/\code{Y1_denoised}/\code{Y_denoised}
+(noiseless potential outcome) columns that \code{\link[=gen_df_adv_k]{gen_df_adv_k()}}
+produces.
 }
 \description{
 generate data mostly in grid (0,1) x (0,1)
+}
+\details{
+This is the fixed-2D-covariate special case of \code{\link[=gen_df_adv_k]{gen_df_adv_k()}}
+(\code{k = 2}), implemented as a thin wrapper around it so the two share
+one underlying DGP implementation. \code{f0_fun}/\code{tx_effect_fun}/
+\code{f0_sd_fun} here use the \verb{function(X1, X2)} calling convention
+(rather than \code{gen_df_adv_k()}'s single k-column-matrix
+\verb{function(X)}), for backward compatibility with existing callers.
 }
 \examples{
 dat <- gen_df_adv(nc = 100, nt = 10)

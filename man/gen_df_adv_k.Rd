@@ -15,6 +15,7 @@ gen_df_adv_k(
   tx_effect_fun = function(X) {
      rep(1, nrow(X))
  },
+  f0_sd_fun = NULL,
   cluster_dist = 0.5,
   prop_nc_unif = 1/3
 )
@@ -32,12 +33,17 @@ gen_df_adv_k(
 
 \item{tx_effect_fun}{Function for treatment effect (expects k-dim matrix X).}
 
+\item{f0_sd_fun}{Function of the k-dim matrix X to generate noise
+standard deviation (heteroskedastic noise). Default is NULL. If
+not NULL, overrides \code{f0_sd}.}
+
 \item{cluster_dist}{Distance parameter influencing cluster separation.}
 
 \item{prop_nc_unif}{Proportion of control units drawn uniformly from the \eqn{[0,1]^k} box.}
 }
 \value{
-A tibble containing a k-dimensional toy dataset.
+A tibble containing a k-dimensional toy dataset. \code{Z} is
+numeric (0/1).
 }
 \description{
 Generate k-dimensional toy data (generalized version)
