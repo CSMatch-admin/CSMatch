@@ -231,16 +231,16 @@ caliper_sensitivity_plot( cal_sens_tbl ) +
 
 
 
-a = get_distance_table( lalonde_scm )
+a = distance_table( lalonde_scm )
 mean( a$closest <= 1 )
 
 max( a$closest )
 
 
 
-plt_stats <- caliper_sensitivity_plot_stats( cal_sens_tbl )
+plt_stats <- caliper_sensitivity_plot_statistics( cal_sens_tbl )
 plt_stats
-ggsave( plt_stats, filename = here::here( "figures/lalonde_caliper_sensitivity_plot_stats.pdf"),
+ggsave( plt_stats, filename = here::here( "figures/lalonde_caliper_sensitivity_plot_statistics.pdf"),
         width = 7, height = 4 )
 
 

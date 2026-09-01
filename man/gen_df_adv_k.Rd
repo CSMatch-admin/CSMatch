@@ -15,7 +15,7 @@ gen_df_adv_k(
   tx_effect_fun = function(X) {
      rep(1, nrow(X))
  },
-  ctr_dist = 0.5,
+  cluster_dist = 0.5,
   prop_nc_unif = 1/3
 )
 }
@@ -32,7 +32,7 @@ gen_df_adv_k(
 
 \item{tx_effect_fun}{Function for treatment effect (expects k-dim matrix X).}
 
-\item{ctr_dist}{Distance parameter influencing cluster separation.}
+\item{cluster_dist}{Distance parameter influencing cluster separation.}
 
 \item{prop_nc_unif}{Proportion of control units drawn uniformly from the \eqn{[0,1]^k} box.}
 }

@@ -296,10 +296,10 @@ ggsave( plt, filename = here::here( "figures/ferman_caliper_sensitivity_plot.pdf
 tbl = caliper_sensitivity_table( plt )
 tbl
 
-plt_stats <- caliper_sensitivity_plot_stats( plt )
+plt_stats <- caliper_sensitivity_plot_statistics( plt )
 plt_stats
 ggsave( plt_stats,
-        filename = here::here( "figures/ferman_caliper_sensitivity_plot_stats.pdf"),
+        filename = here::here( "figures/ferman_caliper_sensitivity_plot_statistics.pdf"),
         width = 7, height = 5 )
 
 

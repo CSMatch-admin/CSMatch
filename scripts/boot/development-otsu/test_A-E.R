@@ -63,7 +63,7 @@ get_se_AE <- function(preds_csm){
 
 
 {
-  df_dgp <- gen_one_toy(ctr_dist=ctr_dist)
+  df_dgp <- gen_one_toy(cluster_dist=ctr_dist)
 
   # The V matrix
   dist_scaling <- df_dgp %>%
@@ -95,7 +95,7 @@ deg_overlaps <- rep(c("low","mid","high"),each=R)
 for (ctr_dist in ctr_dists){
   for (i in 1:R) {
     print(i)
-    df_dgp <- gen_one_toy(ctr_dist=ctr_dist)
+    df_dgp <- gen_one_toy(cluster_dist=ctr_dist)
 
     # The V matrix
     dist_scaling <- df_dgp %>%

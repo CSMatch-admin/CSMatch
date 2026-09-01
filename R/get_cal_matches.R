@@ -201,7 +201,7 @@ get_cal_matches <- function( data,
 
 
   ### use est_method to add individual unit weights: csm or average
-  scweights <- est_weights( matched_gps = scmatches,
+  scweights <- est_weights( matches = scmatches,
                             est_method = est_method)
 
 

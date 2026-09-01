@@ -3,10 +3,10 @@
 # Compare covariate distances from each treated unit to its matched controls
 # under CSM (adaptive caliper + CSM weights) vs. CEM, on the Kang DGP.
 #
-# For CSM: uses get_distance_table(csm, long_table = FALSE) which returns the
+# For CSM: uses distance_table(csm, long_table = FALSE) which returns the
 #   CSM-weighted, equally-weighted, and closest-neighbour distances per tx unit.
 #
-# For CEM: calc_distances_for_CEM() (defined below) mirrors get_distance_table's
+# For CEM: calc_distances_for_CEM() (defined below) mirrors distance_table's
 #   logic: for each treated unit it computes the average covariate distance to
 #   every control unit in the same stratum, using the same scaling and metric.
 
@@ -81,8 +81,8 @@ cat(sprintf("CEM: %d treated and %d controls retained (of %d tx, %d co)\n\n",
 
 # ── 5. CSM distance table ────────────────────────────────────────────────────
 # Returns one row per treated unit with columns: id, CSM, average, closest
-cat("── CSM distance table (get_distance_table) ──\n")
-csm_dists <- get_distance_table(csm, long_table = FALSE)
+cat("── CSM distance table (distance_table) ──\n")
+csm_dists <- distance_table(csm, long_table = FALSE)
 cat("CSM distances (first 10 rows):\n")
 print(head(csm_dists, 10))
 cat(sprintf("\nCSM average distance: mean=%.4f  median=%.4f\n\n",
@@ -98,7 +98,7 @@ cat(sprintf("\nCSM average distance: mean=%.4f  median=%.4f\n\n",
 # treated unit to every control unit in the same stratum, then returns the
 # average over controls for each treated unit.
 #
-# Mirrors get_distance_table's use of gen_dm(): gen_dm() returns an
+# Mirrors distance_table's use of gen_dm(): gen_dm() returns an
 # (n_tx x n_co) distance matrix for a data frame containing both groups.
 # Called per-stratum here because CEM can have multiple treated units per cell.
 #

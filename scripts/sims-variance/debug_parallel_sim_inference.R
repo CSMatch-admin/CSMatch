@@ -37,7 +37,7 @@ nc <- 500; nt <- 100; f0_sd <- 0.5
 df <- gen_df_adv(
   nc = nc, nt = nt,
   f0_sd = f0_sd,
-  ctr_dist = 0.5,
+  cluster_dist = 0.5,
   prop_nc_unif = prop_nc_unif,
   tx_effect_fun = function(X1, X2) { 3*X1 + 3*X2 },
   f0_fun = function(x, y) {

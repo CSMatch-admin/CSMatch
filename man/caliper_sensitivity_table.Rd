@@ -3,7 +3,7 @@
 \name{caliper_sensitivity_table}
 \alias{caliper_sensitivity_table}
 \alias{caliper_sensitivity_plot}
-\alias{caliper_sensitivity_plot_stats}
+\alias{caliper_sensitivity_plot_statistics}
 \title{Make sensitivity table or plot of impact of changing caliper}
 \usage{
 caliper_sensitivity_table(
@@ -28,7 +28,7 @@ caliper_sensitivity_plot(
   lines = c("FATT", "ATT", "FATT_1nn", "ATT_1nn", "FATT_raw", "ATT_raw")
 )
 
-caliper_sensitivity_plot_stats(
+caliper_sensitivity_plot_statistics(
   csm,
   data,
   outcome = NULL,
@@ -43,7 +43,7 @@ caliper_sensitivity_plot_stats(
 \arguments{
 \item{csm}{A CSM object OR a sensitivity ggplot created by, e.g.,
 \code{\link[=caliper_sensitivity_plot]{caliper_sensitivity_plot()}} or
-\code{\link[=caliper_sensitivity_plot_stats]{caliper_sensitivity_plot_stats()}} (or anything with the
+\code{\link[=caliper_sensitivity_plot_statistics]{caliper_sensitivity_plot_statistics()}} (or anything with the
 sensitivity table as an attribute) OR a table with the relevant
 columns (focus, lines, caliper, ESS_C, etc.). This allows calls
 to the different plot methods without recalculating everything.}
@@ -95,7 +95,7 @@ y-axis as ATT estimate and confidence interval, and x-axis a series
 of calipers from the minimum to maximum specified.  Different lines
 are shown for different ATT estimates.
 
-\code{caliper_sensitivity_plot_stats()} makes an augmented plot
+\code{caliper_sensitivity_plot_statistics()} makes an augmented plot
 from sensitivity plot showing ATT, SE and ESS
 }
 \examples{
@@ -131,7 +131,7 @@ mtch <- get_cal_matches(dat,
                         caliper = 1,
                         rad_method = "adaptive",
                         est_method = "csm")
-caliper_sensitivity_plot_stats(mtch, dat, outcome = "Y",
+caliper_sensitivity_plot_statistics(mtch, dat, outcome = "Y",
                                R = 5, min_cal = 0.1, max_cal = 2)
 
 }

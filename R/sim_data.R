@@ -45,7 +45,8 @@ gen_toy_covar <- function(n, X1_ctrs, X2_ctrs, SD) {
 #'   Default is NULL. If not null, override f0_sd.
 #' @param f0_fun (something)
 #' @param tx_effect_fun (something)
-#' @param ctr_dist from 0 to 1; lower means better overlap
+#' @param cluster_dist Cluster separation, from 0 to 1; lower means
+#'   better overlap
 #' @param prop_nc_unif proportion of uniform controls. lower means
 #'   worse overlap
 #'
@@ -60,13 +61,13 @@ gen_df_adv <- function(nc, nt,
                        f0_fun = function(X1, X2) {1},
                        tx_effect_fun = function(X1, X2) {1},
                        f0_sd_fun = NULL,
-                       ctr_dist = 0.5,
+                       cluster_dist = 0.5,
                        prop_nc_unif = 1/3
 ) {
   SD <- 0.1
 
-  c1 <- 0.5 - ctr_dist/2
-  c2 <- 0.5 + ctr_dist/2
+  c1 <- 0.5 - cluster_dist/2
+  c2 <- 0.5 + cluster_dist/2
 
   # nt tx units clustered at (0.25,0.25) and (0.75,0.75)
   #     which translates to X1_ctrs=(0.25,0.75) and X2_ctrs=(0.25,0.75)
@@ -182,7 +183,7 @@ gen_toy_covar_k <- function(n, centers, k, sd) {
 #' @param f0_sd Standard deviation of the noise term.
 #' @param f0_fun Function for baseline potential outcome Y0 (expects k-dim matrix X).
 #' @param tx_effect_fun Function for treatment effect (expects k-dim matrix X).
-#' @param ctr_dist Distance parameter influencing cluster separation.
+#' @param cluster_dist Distance parameter influencing cluster separation.
 #' @param prop_nc_unif Proportion of control units drawn uniformly from the \eqn{[0,1]^k} box.
 #'
 #' @return A tibble containing a k-dimensional toy dataset.
@@ -196,15 +197,15 @@ gen_df_adv_k <- function(nc, nt, k, # Added k
                          # Default functions now expect matrix X
                          f0_fun = function(X) { rep(1, nrow(X)) },
                          tx_effect_fun = function(X) { rep(1, nrow(X)) },
-                         ctr_dist = 0.5,
+                         cluster_dist = 0.5,
                          prop_nc_unif = 1/3
 ) {
 
   SD <- 0.1 # Base SD for blobs
 
   # Define k-dimensional centers
-  c1 <- 0.5 - ctr_dist / 2
-  c2 <- 0.5 + ctr_dist / 2
+  c1 <- 0.5 - cluster_dist / 2
+  c2 <- 0.5 + cluster_dist / 2
 
   # Tx centers: e.g., (c1, c1, ...) and (c2, c2, ...)
   tx_centers <- list(rep(c1, k), rep(c2, k))
@@ -267,10 +268,11 @@ gen_df_adv_k <- function(nc, nt, k, # Added k
 
 #' Generate a toy dataset with a single treatment effect (Updated to use gen_df_adv_k)
 #'
-#' @param k Dimensionality of the feature space. Default is 2.
+#' @param num_cov Dimensionality of the feature space (number of
+#'   covariates). Default is 2.
 #' @param nc Number of control units. Default is 500.
 #' @param nt Number of treated units. Default is 100.
-#' @param ctr_dist Distance between the two control clusters. Default is 0.5.
+#' @param cluster_dist Distance between the two control clusters. Default is 0.5.
 #' @param prop_nc_unif Proportion of control units drawn from a uniform distribution. Default is 1/3.
 #' @param f0_sd Standard deviation for the noise in the potential outcome function f0. Default is 0.5.
 #'
@@ -280,9 +282,9 @@ gen_df_adv_k <- function(nc, nt, k, # Added k
 #' dim(dat)
 #' @export
 #'
-gen_one_toy <- function( k = 2, # Added dimensionality parameter k, default 2
+gen_one_toy <- function( num_cov = 2, # Added dimensionality parameter, default 2
                          nc = 500, nt = 100,
-                         ctr_dist = 0.5,
+                         cluster_dist = 0.5,
                          prop_nc_unif = 1/3,
                          f0_sd = 0.5 ){
 
@@ -290,8 +292,8 @@ gen_one_toy <- function( k = 2, # Added dimensionality parameter k, default 2
   if ( nc < 5 ) {
     warning( "Very small control group in gen_one_toy!" )
   }
-  if (!is.numeric(k) || k < 1 || floor(k) != k) {
-    stop("k must be a positive integer.")
+  if (!is.numeric(num_cov) || num_cov < 1 || floor(num_cov) != num_cov) {
+    stop("num_cov must be a positive integer.")
   }
   # --- End Input validation ---
 
@@ -299,31 +301,31 @@ gen_one_toy <- function( k = 2, # Added dimensionality parameter k, default 2
   # These functions expect a matrix 'X'
   tx_effect_fun <- function(X) {
     if (!is.matrix(X) && !is.data.frame(X)) stop("tx_effect_fun expects a matrix/df.")
-    if (ncol(X) < k) stop(paste("tx_effect_fun requires input with at least", k, "columns."))
-    rowSums(X[, 1:k, drop = FALSE] * 3)
+    if (ncol(X) < num_cov) stop(paste("tx_effect_fun requires input with at least", num_cov, "columns."))
+    rowSums(X[, 1:num_cov, drop = FALSE] * 3)
   }
 
   f0_fun <- function(X) {
     if (!is.matrix(X) && !is.data.frame(X)) stop("f0_fun expects a matrix/df.")
-    if (ncol(X) < k) stop(paste("f0_fun requires input with at least", k, "columns."))
-    mean_vec <- rep(0.5, k)
-    sigma_mat <- matrix(0.8, nrow = k, ncol = k)
+    if (ncol(X) < num_cov) stop(paste("f0_fun requires input with at least", num_cov, "columns."))
+    mean_vec <- rep(0.5, num_cov)
+    sigma_mat <- matrix(0.8, nrow = num_cov, ncol = num_cov)
     diag(sigma_mat) <- 1
-    densities <- mvtnorm::dmvnorm(X[, 1:k, drop=FALSE], mean = mean_vec, sigma = sigma_mat)
+    densities <- mvtnorm::dmvnorm(X[, 1:num_cov, drop=FALSE], mean = mean_vec, sigma = sigma_mat)
     densities * 20
   }
   # --- End function definitions ---
 
   # --- Call the NEW k-dimensional generator function ---
-  # Pass k explicitly now
+  # Pass dimensionality explicitly now
   gen_df_adv_k(
     nc = nc,
     nt = nt,
-    k = k, # Pass k
+    k = num_cov, # gen_df_adv_k's own dimensionality parameter is still called k
     f0_sd = f0_sd,
     tx_effect_fun = tx_effect_fun,
     f0_fun = f0_fun,
-    ctr_dist = ctr_dist,
+    cluster_dist = cluster_dist,
     prop_nc_unif = prop_nc_unif
   )
   # --- End function call ---

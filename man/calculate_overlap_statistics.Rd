@@ -4,10 +4,10 @@
 \alias{calculate_overlap_statistics}
 \title{Calculate Overlap Statistics (Backward Compatibility)}
 \usage{
-calculate_overlap_statistics(mtch)
+calculate_overlap_statistics(csm)
 }
 \arguments{
-\item{mtch}{A match object from matching procedures}
+\item{csm}{A match object from matching procedures}
 }
 \value{
 Original pairwise overlap statistics for backward compatibility

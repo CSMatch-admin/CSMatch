@@ -91,16 +91,16 @@ make_csm_toy_df <- function(
       f0_sd = f0_sd,
       tx_effect_fun = tx_effect_fun_xy,
       f0_fun = f0_fun_xy,
-      ctr_dist = ctr_dist,
+      cluster_dist = ctr_dist,
       prop_nc_unif = prop_nc_unif
     )
   } else {
     gen_df_adv_k(
-      nc = nc, nt = nt, k = 2,
+      nc = nc, nt = nt, num_cov = 2,
       f0_sd = f0_sd,
       tx_effect_fun = tx_effect_fun_mat,
       f0_fun = f0_fun_mat,
-      ctr_dist = ctr_dist,
+      cluster_dist = ctr_dist,
       prop_nc_unif = prop_nc_unif
     )
   }

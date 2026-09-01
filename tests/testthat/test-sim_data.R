@@ -71,7 +71,7 @@ test_that("gen_df_adv_k returns tibble", {
 })
 
 test_that("gen_one_toy returns tibble", {
-  out <- gen_one_toy(k = 2, nc = 20, nt = 10)
+  out <- gen_one_toy(num_cov = 2, nc = 20, nt = 10)
   expect_s3_class(out, "tbl_df")
 })
 

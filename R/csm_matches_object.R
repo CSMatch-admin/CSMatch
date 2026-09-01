@@ -584,10 +584,10 @@ full_unit_table <- function(csm,
 #' Update a matching call to change some parameters
 #'
 #' Refits [get_cal_matches()] on `data` reusing all settings (metric,
-#' scaling, treatment, covariates, etc.) stored on `res`, except for
+#' scaling, treatment, covariates, etc.) stored on `csm`, except for
 #' any settings overridden via `...`.
 #'
-#' @param res A csm_matches object
+#' @param csm A csm_matches object
 #' @param data The data frame to rematch (typically the same data
 #'   originally passed to [get_cal_matches()])
 #' @param warn A logical indicating whether to warn about dropped
@@ -615,13 +615,13 @@ full_unit_table <- function(csm,
 #' update_matches( mtch, dat, caliper = 0.5, rad_method = "fixed" )
 #'
 #' @export
-update_matches <- function( res, data, warn = TRUE, ... ) {
-  stopifnot( inherits( res, "csm_matches" ) )
+update_matches <- function( csm, data, warn = TRUE, ... ) {
+  stopifnot( inherits( csm, "csm_matches" ) )
 
-  args = attr( res, "settings" )
+  args = attr( csm, "settings" )
   args = modifyList( args, list( ... ) )
 
-  covs = attr( res, "covariates" )
+  covs = attr( csm, "covariates" )
   new_res <- get_cal_matches( data=data,
                               covs = covs,
                               treatment = args$treatment,

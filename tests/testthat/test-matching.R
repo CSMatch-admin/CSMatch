@@ -434,13 +434,13 @@ test_that("est_weights works fine", {
   expect_equal( length( scmatches$matches ), 2 )
 
   covs = "X"
-  matched_gps = scmatches$matches
+  matches_gps = scmatches$matches
   scaling=1
   metric = "maximum"
 
   scweights <-
     est_weights(covs = covs,
-                matched_gps = matched_gps,
+                matches = matches_gps,
                 scaling = scaling,
                 est_method = "csm",
                 metric = metric)

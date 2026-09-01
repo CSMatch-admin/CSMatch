@@ -30,7 +30,7 @@ test_that("diagnostic plots", {
   covs = c( "X", "X2","X3" )
 
   love_plot_df <-
-    CSMatch:::create_love_plot_df( res = res,
+    CSMatch:::create_love_plot_df( csm = res,
                                covs = covs)
   love_plot_df
 

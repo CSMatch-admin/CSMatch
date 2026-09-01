@@ -142,59 +142,130 @@ priority. Checked items are done; the rest are tracked for follow-up.
 
 ## Reuse / simplification / efficiency
 
+Per your review of these items (2026-08-31):
+
 - [ ] `compute_pairwise_shared_controls()`/`compute_shared_controls_per_treated()`
       (calculate_overlap_stat.R) use O(N²) loops with per-pair
       `intersect()`; reduce to one matrix multiply on a
-      treated×control incidence matrix.
+      treated×control incidence matrix. **No response given on this
+      one — needs a decision on whether to do it.**
 - [ ] `get_radius_size()`'s four branches are ~90% duplicated
       boilerplate differing only in the final one-line computation.
+      **You pushed back: "it looks clean and tight... since all the
+      branches aren't the same this seems clean." — let's discuss.**
 - [ ] `set_NA_to_unmatched_co()` (matching.R) — per-row for-loop that
-      vectorizes cleanly.
-- [ ] `sensitivity_table()`'s `include_distances` branch builds a full
+      vectorizes cleanly. **You asked what this means — let's
+      discuss.**
+- [x] `sensitivity_table()`'s `include_distances` branch builds a full
       `distance_density_plot()` ggplot object purely to scrape its
-      attached data table.
-- [ ] Duplicated ~8-line all-`NA` placeholder list appears 3x verbatim
-      in `calculate_overlap_stats_from_table()`.
+      attached data table. **Per your call ("put in future... unclear
+      how to do it cleanly"), logged in `FUTURE_WORK.md` instead of
+      fixing now.**
+- [x] Duplicated ~8-line all-`NA` placeholder list appeared verbatim
+      (actually 4x, not 3x) in `calculate_overlap_stats_from_table()`.
+      **Fixed per your instruction: extracted `na_pairwise_overlap()`
+      and `na_overlap_result()` internal helpers**
+      (calculate_overlap_stat.R), all 4 call sites now use them.
 - [ ] `calculate_subclass_variances()` and the `s_t_sq_df` block inside
       `calculate_s_j_sq()` independently reimplement near-identical
-      "variance per subclass" logic.
+      "variance per subclass" logic. **You want to discuss how to
+      align these — let's discuss.**
 - [ ] `feasible_plot()` refits `estimate_ATT()` from scratch once per
       cumulative subset of treated units — O(n) full recomputations.
+      **You're unsure it's worth fixing since it's not rematching —
+      let's discuss.**
 
-## Naming issues (need your input before renaming — these are
-## public-API-breaking for exported functions)
+## Naming issues
 
-- [ ] `sensitivity_table()`/`caliper_sensitivity_*` — name clashes with
-      the established causal-inference meaning of "sensitivity
-      analysis" (robustness to unmeasured confounding); this family
-      does something unrelated (comparing weighting methods).
-- [ ] `calculate_overlap_statistics()` vs.
-      `calculate_overlap_statistics_from_match_object()` vs.
-      `calculate_overlap_stats_from_table()` — near-identical names,
-      inconsistent `statistics`/`stats` abbreviation, and the
-      shortest-named one returns a *different, smaller* shape than its
-      siblings.
-- [ ] `params()` and `ess()` — dangerously generic/terse exported names
-      (collision risk in a user's session).
-- [ ] The variance-estimator family (`get_pooled_variance`,
-      `get_measurement_error_variance[_het/_OR]`, `get_finite_variance`,
-      `get_total_variance`) — dispatch strings don't match function
-      names (`variance_method="bootstrap"` → `..._OR`; `"pooled"` → a
-      function whose name doesn't say "pooled").
-- [ ] Five different parameter names across the package for "the
-      csm_matches object": `x`, `object`, `csm`, `res`, `mtch`.
-- [ ] `gen_df_adv`/`gen_df_adv_k`/`gen_one_toy` — hierarchy invisible
-      from names (`gen_one_toy` wraps `gen_df_adv_k`, not
-      `gen_df_adv`); "adv" is an undocumented abbreviation.
-- [ ] `k` is overloaded package-wide: "number of neighbors" in matching
-      code vs. "covariate dimensionality" in DGP code.
-- [ ] `bad_matches()` vs. `treatment_table(bad = TRUE)` — two different
-      "bad" concepts, easy to conflate.
-- [ ] `matched_gps` parameter in `est_weights()` — unclear abbreviation.
-- [ ] `ctr_dist` parameter (DGP functions) — misleading; actually means
-      cluster separation, not control-vs-treated distance.
-- [ ] Minor: `caliper_sensitivity_plot_stats` reads awkwardly;
-      `impact_curve` vs. `impact_table` inconsistent with the `*_plot`
-      suffix convention used elsewhere; `get_` prefix used
-      inconsistently (`get_distance_table` vs. `sensitivity_table`/
-      `caliper_table`, same "fetch a table" role).
+Resolved per your instructions (2026-08-31) — full diff in commit
+history; ran full test suite + `R CMD check` clean after each batch:
+
+- [x] `calculate_overlap_stats_from_table()` → renamed to
+      `calculate_overlap_statistics_from_table()` ("stats" →
+      "statistics"). Left the deeper inconsistency across the three
+      `calculate_overlap_statistics*` functions (and their differing
+      return shapes) for later — logged in `FUTURE_WORK.md` and noted
+      in `?calculate_overlap_statistics_from_table`, per your
+      instruction not to worry about that part right now.
+- [x] `params()` and `ess()` — **no change**, per your call.
+- [x] Variance-estimator family dispatch-string/function-name mismatch
+      — **left as-is for now**, per your call.
+- [x] Five different parameter names for "the csm_matches object" (`x`,
+      `object`, `csm`, `res`, `mtch`) — renamed all non-S3-dispatch
+      occurrences of `res`/`mtch` to `csm`
+      (`update_matches()`, `calculate_overlap_statistics()`,
+      `calculate_overlap_statistics_from_match_object()`,
+      `get_diff_scm_co_and_tx()`, `create_love_plot_df()`). Left `x`
+      (print/dim methods) and `object` (summary method) alone — those
+      already follow the S3-dispatch convention you specified.
+- [x] `k` overloaded ("number of neighbors" vs. "covariate
+      dimensionality") — renamed to `num_cov` in `gen_one_toy()` only
+      (the user-facing demo/example entry point). **Deliberately left
+      `gen_df_adv_k()`/`gen_toy_covar_k()`'s own `k` unchanged** — that
+      parameter is the literal referent of those functions' `_k`
+      suffix, so renaming it is really part of the
+      `gen_df_adv`/`gen_df_adv_k`/`gen_one_toy` hierarchy question
+      below, not this narrower overloading fix. See investigation
+      below.
+- [x] `matched_gps` parameter in `est_weights()` → renamed to
+      `matches`, per your instruction, with the doc updated to "List
+      of matched groups, or a csm object". (Found and fixed a bug this
+      surfaced: the function used the same name for both the raw
+      input and the extracted list-of-matched-sets, then tried to
+      re-wrap the *original* object at the end using a name that had
+      already been overwritten — introduced a separate `match_list`
+      local variable to fix it.)
+- [x] `ctr_dist` parameter (DGP functions) → renamed to `cluster_dist`
+      in `gen_df_adv()`, `gen_df_adv_k()`, and `gen_one_toy()`, per
+      your instruction. Also fixed every direct call site in the
+      *active* (non-`old/`) scripts that passed it as a named argument
+      to one of these three functions: `sims-variance/debug_parallel_sim_inference.R`,
+      `sims-variance/0_sim_inference_utils.R`,
+      `figs/tune_bimodal_sigma_params.R`, `figs/fig_control_weights.R`,
+      `sims-variance-multi/0_utils.R`,
+      `sims-variance-het-sigma{,-bimodal,-bimodal-v2}/0_sim_inference_utils.R`,
+      `boot/boot_CSM_simulation_code.R`,
+      `boot/development-otsu/test_A-E.R`, `figs/fig04_sim_toy_3_overlaps.R`.
+      Left `scripts/old/` untouched, and left alone the many
+      script-local wrapper functions (e.g. `make_csm_toy_df()`) that
+      happen to have their own same-named `ctr_dist` parameter — those
+      are the scripts' own API, not the package's. **Found in passing:
+      `figs/fig04_sim_toy_3_overlaps.R` was already broken before any
+      of this (`library(CSM)` — a package name that predates even the
+      `scmatch2` name — and a `source("./R/diagnostic_plots.R")` relative-path
+      hack instead of using the installed package), and it also calls
+      `create_toy_df_plot()`, which the earlier dead-code cleanup pass
+      removed since it had zero references anywhere in `R/`. That
+      script needs your attention separately — flagging, not fixing.**
+- [x] `caliper_sensitivity_plot_stats` → renamed to
+      `caliper_sensitivity_plot_statistics`, per your instruction.
+      Fixed all call sites (R/, tests/, scripts/ferman-analysis,
+      scripts/lalonde-analysis).
+- [x] `get_distance_table` → renamed to `distance_table`, per your
+      instruction. Fixed all call sites (R/, tests/, scripts/, incl.
+      ferman/lalonde analysis scripts).
+- [ ] `sensitivity_table()`/`caliper_sensitivity_*` naming clash with
+      causal-inference "sensitivity analysis" — **no instruction given
+      on this one, left as-is.**
+- [ ] `bad_matches()` vs. `treatment_table(bad = TRUE)` — **investigated
+      per your question: confirmed they're complementary, not
+      conflicting.** Both key off the same `adacal > threshold`
+      criterion; `treatment_table(bad = TRUE)` returns the
+      treatment-level table for those units, `bad_matches()` returns
+      the full matched-unit rows (treated + controls) for the same
+      units. No change made; flagging one small asymmetry for
+      awareness: `bad_matches()`'s `threshold` arg has no default,
+      while `treatment_table(bad=TRUE)` defaults it to the caliper.
+- [ ] `gen_df_adv`/`gen_df_adv_k`/`gen_one_toy` hierarchy — **investigated
+      per your question:** `gen_df_adv()` is *not* dead/superseded — it's
+      actively used in tests and multiple scripts (including
+      `scripts/sims-bias_mse/` and `scripts/sims-variance/`) as the
+      fixed-2D-covariate DGP, distinct from `gen_df_adv_k()`'s general
+      k-dimensional version. Given that, this is a genuine naming
+      question, not a dead-code question — let's discuss what (if
+      anything) to rename.
+- [ ] Minor: `impact_curve` vs. `impact_table` inconsistent with the
+      `*_plot` suffix convention used elsewhere; remaining `get_`
+      prefix inconsistency (e.g. `sensitivity_table`/`caliper_table`
+      have no `get_` prefix, unlike some others) — **no instruction
+      given on the parts beyond the two renames above; left as-is.**

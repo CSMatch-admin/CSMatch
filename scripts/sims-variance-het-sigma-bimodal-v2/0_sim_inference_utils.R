@@ -87,7 +87,7 @@ make_bimodal_sigma_v2_df <- function(
     f0_sd         = 0,
     tx_effect_fun = tx_fun_mat,
     f0_fun        = f0_fun_mat,
-    ctr_dist      = ctr_dist,
+    cluster_dist  = ctr_dist,
     prop_nc_unif  = prop_nc_unif
   )
 

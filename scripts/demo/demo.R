@@ -32,7 +32,7 @@ estimate_ATT( mtch )
 #########
 ## Try 6 dims
 set.seed( 4044440 )
-toy_data_6d <- gen_one_toy(k = 6, nc = 600, nt = 5)
+toy_data_6d <- gen_one_toy(num_cov = 6, nc = 600, nt = 5)
 
 print(head(toy_data_6d))
 

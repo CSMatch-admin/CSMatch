@@ -32,7 +32,7 @@ df <- gen_df_adv_k(
   f0_sd          = 0.5,
   tx_effect_fun  = tx_fun_mat,
   f0_fun         = f0_fun_mat,
-  ctr_dist       = 0.5,
+  cluster_dist   = 0.5,
   prop_nc_unif   = 1/3       # "mid" overlap
 )
 df <- df %>% mutate(Z = as.integer(Z))

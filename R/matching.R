@@ -311,8 +311,7 @@ gen_matches <- function( data,
 #' Generate weights for list of matched sets, typically by the
 #' synthetic control method (but you can also simply average).
 #'
-#' @param matched_gps Either a csm_matches object or a list of matched
-#'   sets, with a tx unit in first row of each set.
+#' @param matches List of matched groups, or a csm object.
 #' @param covs List of covariates to calculate similarity scores on if
 #'   using csm.
 #' @param treatment Name of the treatment indicator column.
@@ -325,20 +324,20 @@ gen_matches <- function( data,
 #'   weights. Otherwise, return list of matched sets, with 'weights'
 #'   for each control unit.
 #' @noRd
-est_weights <- function( matched_gps,
+est_weights <- function( matches,
                          est_method = c("csm", "average"),
-                         covs = params(matched_gps)$covariates,
-                         treatment = params(matched_gps)$treatment,
-                         scaling = params(matched_gps)$scaling,
-                         metric = params(matched_gps)$metric ) {
+                         covs = params(matches)$covariates,
+                         treatment = params(matches)$treatment,
+                         scaling = params(matches)$scaling,
+                         metric = params(matches)$metric ) {
   #                          c("maximum", "euclidean", "manhattan")) {
 
   est_method = match.arg(est_method)
   metric = match.arg(metric, choices=c("maximum", "euclidean", "manhattan"))
 
-  matches = matched_gps
-  if ( is.csm_matches(matched_gps) ) {
-    matches = matched_gps$matches
+  match_list <- matches
+  if ( is.csm_matches(matches) ) {
+    match_list <- matches$matches
   }
 
   if (est_method == "csm") {
@@ -347,16 +346,16 @@ est_weights <- function( matched_gps,
     #          so I still don't mess with them here.
     match_cols <- covs
 
-    scweights <- purrr::map( matches,
+    scweights <- purrr::map( match_list,
                       ~gen_sc_weights(.x, match_cols,
                                       scaling,
                                       metric),
                       .progress="Producing CSM units...")
     # needs to modify gen_sc_weights to get clear:
-    #   a) what type of matched_gps is required
+    #   a) what type of matches is required
     #   b) whether match_cols can be ignored
   } else if (est_method == "average") {
-    scweights <- purrr::map( matches,
+    scweights <- purrr::map( match_list,
                       function(x) {
                         x %>%
                           group_by( across( all_of( treatment ) ) ) %>%
@@ -366,11 +365,11 @@ est_weights <- function( matched_gps,
   }
 
   # We should not lose any units when calculating weights.
-  stopifnot( length( matches ) == length( scweights ) )
+  stopifnot( length( match_list ) == length( scweights ) )
 
-  if ( is.csm_matches(matched_gps) ) {
-    matched_gps$matches <- scweights
-    return( matched_gps )
+  if ( is.csm_matches(matches) ) {
+    matches$matches <- scweights
+    return( matches )
   } else {
     return(scweights)
   }

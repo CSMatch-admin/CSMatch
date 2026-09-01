@@ -5,22 +5,23 @@
 \title{Generate a toy dataset with a single treatment effect (Updated to use gen_df_adv_k)}
 \usage{
 gen_one_toy(
-  k = 2,
+  num_cov = 2,
   nc = 500,
   nt = 100,
-  ctr_dist = 0.5,
+  cluster_dist = 0.5,
   prop_nc_unif = 1/3,
   f0_sd = 0.5
 )
 }
 \arguments{
-\item{k}{Dimensionality of the feature space. Default is 2.}
+\item{num_cov}{Dimensionality of the feature space (number of
+covariates). Default is 2.}
 
 \item{nc}{Number of control units. Default is 500.}
 
 \item{nt}{Number of treated units. Default is 100.}
 
-\item{ctr_dist}{Distance between the two control clusters. Default is 0.5.}
+\item{cluster_dist}{Distance between the two control clusters. Default is 0.5.}
 
 \item{prop_nc_unif}{Proportion of control units drawn from a uniform distribution. Default is 1/3.}
 

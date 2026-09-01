@@ -45,7 +45,7 @@ eval_params_once <- function(A, h_sq, sigma_min, seed) {
       mvtnorm::dmvnorm(X, mean  = c(0.5, 0.5),
                        sigma = matrix(c(1, 0.8, 0.8, 1), 2, 2)) * 20
     },
-    ctr_dist = 0.5, prop_nc_unif = 1/3
+    cluster_dist = 0.5, prop_nc_unif = 1/3
   )
 
   sig0 <- sigma0_tunable(df_raw$X1, df_raw$X2,

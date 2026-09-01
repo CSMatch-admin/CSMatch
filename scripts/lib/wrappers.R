@@ -448,7 +448,7 @@ get_cem_matches <- function(
 
   # estimate outcomes within cells
   treatment_var <- all.vars(Z_FORMULA)[1]
-  scweights <- est_weights(matched_gps = cem_matched_gps,
+  scweights <- est_weights(matches = cem_matched_gps,
                            covs=covs,
                            scaling = scaling,
                            est_method = est_method,

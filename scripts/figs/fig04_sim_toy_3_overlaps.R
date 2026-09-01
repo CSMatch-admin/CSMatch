@@ -6,7 +6,7 @@ source("./R/diagnostic_plots.R")
 # Test the degree of overlap set by prop_nc_unif
 if ( FALSE ){
   sample_dat <-
-    gen_one_toy(ctr_dist=0.5,
+    gen_one_toy(cluster_dist=0.5,
                 prop_nc_unif = 1/3)
   names(sample_dat)
   ggplot( sample_dat, aes( X1, X2, col=as.factor(Z) ) ) +
@@ -21,17 +21,17 @@ set.seed(123)
 # set the same seed to make sure the treated
 # is distributed the same as in the simulation
 dat_low_overlap <-
-  gen_one_toy(ctr_dist = 0.5, prop_nc_unif = 1/3)
+  gen_one_toy(cluster_dist = 0.5, prop_nc_unif = 1/3)
 plot_low_overlap <-
   create_toy_df_plot(dat_low_overlap) + theme(legend.position = "none")
 set.seed(123)
 dat_mid_overlap <-
-  gen_one_toy(ctr_dist = 0.5, prop_nc_unif = 2/3)
+  gen_one_toy(cluster_dist = 0.5, prop_nc_unif = 2/3)
 plot_mid_overlap <-
   create_toy_df_plot(dat_mid_overlap) + theme(legend.position = "none")
 set.seed(123)
 dat_high_overlap <-
-  gen_one_toy(ctr_dist = 0.5, prop_nc_unif = 3/3)
+  gen_one_toy(cluster_dist = 0.5, prop_nc_unif = 3/3)
 plot_high_overlap <-
   create_toy_df_plot(dat_high_overlap)
 

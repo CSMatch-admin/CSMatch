@@ -138,10 +138,10 @@ caliper_distance_plot <- function( csm, tops = 1:3, caliper = NULL,
 #'                         caliper = 1,
 #'                         rad_method = "adaptive",
 #'                         est_method = "csm")
-#' get_distance_table(mtch)
+#' distance_table(mtch)
 #'
 #' @export
-get_distance_table <- function( csm,
+distance_table <- function( csm,
                                 long_table = FALSE ) {
   d = result_table(csm)
   scaling = params(csm)$scaling
@@ -248,7 +248,7 @@ get_distance_table <- function( csm,
 #' @export
 distance_density_plot <- function(csm, feasible_only = FALSE, boxplot_style = TRUE ) {
 
-  dist_table <- get_distance_table( csm, long_table = TRUE )
+  dist_table <- distance_table( csm, long_table = TRUE )
 
   # rename method factor level closest to 1-NN
   dist_table <- dist_table %>%
@@ -339,13 +339,13 @@ scm_vs_avg_distance_plot <- function(csm) {
 
 # love plot ---------------------------------------------------------------
 
-get_diff_scm_co_and_tx <- function(res, covs){
-  stopifnot( is.csm_matches(res) )
+get_diff_scm_co_and_tx <- function(csm, covs){
+  stopifnot( is.csm_matches(csm) )
 
-  ada = res$treatment_table %>%
+  ada = csm$treatment_table %>%
     dplyr::select(id, adacal) %>%
     mutate( id = as.character(id) )
-  df_diff_scm_co_and_tx <- result_table(res) %>%
+  df_diff_scm_co_and_tx <- result_table(csm) %>%
     left_join(ada,
               by="id") %>%
     group_by(subclass) %>%
@@ -357,12 +357,12 @@ get_diff_scm_co_and_tx <- function(res, covs){
 
 
 
-create_love_plot_df <- function(res, covs){
-  feasible_subclasses <- feasible_units(res)
+create_love_plot_df <- function(csm, covs){
+  feasible_subclasses <- feasible_units(csm)
   n_feasible <- nrow(feasible_subclasses)
 
   df_step_1<-
-    get_diff_scm_co_and_tx(res,covs)
+    get_diff_scm_co_and_tx(csm,covs)
 
   df_step_2<-df_step_1 %>%
     arrange(adacal) %>%

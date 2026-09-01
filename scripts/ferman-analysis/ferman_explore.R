@@ -43,8 +43,8 @@ ferman_csm <- ferman_for_analysis %>%
 ferman_csm
 
 debug( distance_density_plot )
-get_distance_table( ferman_csm, long_table = TRUE )
-get_distance_table( ferman_csm, long_table = FALSE )
+distance_table( ferman_csm, long_table = TRUE )
+distance_table( ferman_csm, long_table = FALSE )
 
 a <- distance_density_plot( ferman_csm )
 a

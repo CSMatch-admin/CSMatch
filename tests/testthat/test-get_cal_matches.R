@@ -234,7 +234,7 @@ test_that("adaptive matching gets right units", {
   result_table( scmatches )
   result_table( scmatches, return = "sc_units" )
 
-  dt <- get_distance_table( scmatches )
+  dt <- distance_table( scmatches )
   dt
   expect_true( all( dt$CSM <= dt$closest ) )
   expect_true( all( dt$closest <= dt$average ) )

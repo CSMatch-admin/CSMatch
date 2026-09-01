@@ -128,10 +128,10 @@ test_that("caliper sensitivity plot works", {
                 attr( plt2, "table" ) )
 
 
-  plt3 <- caliper_sensitivity_plot_stats(plt2)
+  plt3 <- caliper_sensitivity_plot_statistics(plt2)
   plt3
 
-  plt3 <- caliper_sensitivity_plot_stats(plt2,
+  plt3 <- caliper_sensitivity_plot_statistics(plt2,
                                          vars = c("ATT", "SE", "ESS_C" ) )
   plt3
 

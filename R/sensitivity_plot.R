@@ -65,7 +65,7 @@ sensitivity_table <- function( csm,
   covs = attr( csm, "covariates" )
 
   if ( args$est_method != "csm" ) {
-    csm <- est_weights( matched_gps = csm,
+    csm <- est_weights( matches = csm,
                         est_method = "csm")
   }
 
@@ -200,7 +200,7 @@ sensitivity_table <- function( csm,
 #'
 #' @param csm A CSM object OR a sensitivity ggplot created by, e.g.,
 #'   [caliper_sensitivity_plot()] or
-#'   [caliper_sensitivity_plot_stats()] (or anything with the
+#'   [caliper_sensitivity_plot_statistics()] (or anything with the
 #'   sensitivity table as an attribute) OR a table with the relevant
 #'   columns (focus, lines, caliper, ESS_C, etc.). This allows calls
 #'   to the different plot methods without recalculating everything.
@@ -410,7 +410,7 @@ caliper_sensitivity_plot <- function( csm,
 
 #' @rdname caliper_sensitivity_table
 #'
-#' @details `caliper_sensitivity_plot_stats()` makes an augmented plot
+#' @details `caliper_sensitivity_plot_statistics()` makes an augmented plot
 #' from sensitivity plot showing ATT, SE and ESS
 #'
 #' @param vars Which columns of the sensitivity table to plot as
@@ -427,11 +427,11 @@ caliper_sensitivity_plot <- function( csm,
 #'                         caliper = 1,
 #'                         rad_method = "adaptive",
 #'                         est_method = "csm")
-#' caliper_sensitivity_plot_stats(mtch, dat, outcome = "Y",
+#' caliper_sensitivity_plot_statistics(mtch, dat, outcome = "Y",
 #'                                R = 5, min_cal = 0.1, max_cal = 2)
 #'
 #' @export
-caliper_sensitivity_plot_stats <- function( csm,
+caliper_sensitivity_plot_statistics <- function( csm,
                                             data,
                                             outcome = NULL,
                                             min_cal = 0.05,

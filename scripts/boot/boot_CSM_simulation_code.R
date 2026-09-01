@@ -73,7 +73,7 @@ get_df_scaling_from_dgp_name <- function(dgp_name,
                                          N1 = NULL,
                                          N0 = NULL){
   if (dgp_name == "toy"){
-    df_dgp <- gen_one_toy(ctr_dist=toy_ctr_dist)
+    df_dgp <- gen_one_toy(cluster_dist=toy_ctr_dist)
     scaling <- 8
   }else if(dgp_name=="kang"){
     df_dgp <- gen_df_kang(n = 1000)

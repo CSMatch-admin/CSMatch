@@ -4,10 +4,10 @@
 \alias{calculate_overlap_statistics_from_match_object}
 \title{Calculate Overlap Statistics from Match Object}
 \usage{
-calculate_overlap_statistics_from_match_object(mtch)
+calculate_overlap_statistics_from_match_object(csm)
 }
 \arguments{
-\item{mtch}{A match object from matching procedures.}
+\item{csm}{A match object from matching procedures.}
 }
 \value{
 A list containing all three sets of overlap statistics.

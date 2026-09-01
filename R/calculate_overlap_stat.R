@@ -258,6 +258,39 @@ compute_shared_controls_per_treated <- function(matched_matrix) {
 # MAIN FUNCTIONS
 # ============================================================================
 
+#' All-NA placeholder for the pairwise-overlap metric
+#' @noRd
+na_pairwise_overlap <- function() {
+  list(
+    avg_shared_controls = NA,
+    p75_shared_controls = NA,
+    max_shared_controls = NA,
+    avg_shared_treated = NA,
+    p75_shared_treated = NA,
+    max_shared_treated = NA
+  )
+}
+
+#' All-NA placeholder for the full overlap-statistics result
+#' (used when there's no data to compute any of the three metrics from)
+#' @noRd
+na_overlap_result <- function() {
+  list(
+    pairwise_overlap = na_pairwise_overlap(),
+    control_reuse = list(
+      mean_reuse = NA,
+      median_reuse = NA,
+      max_reuse = NA
+    ),
+    shared_per_treated = list(
+      mean_shared = NA,
+      median_shared = NA,
+      prop_shared = NA,
+      max_shared = NA
+    )
+  )
+}
+
 #' Calculate Overlap Statistics from Matched Table
 #'
 #' Calculates all three overlap metrics for a matched dataset from a
@@ -265,7 +298,12 @@ compute_shared_controls_per_treated <- function(matched_matrix) {
 #'
 #' @param full_matched_table A data frame containing the matched data.
 #'
-#' @return A list containing all three sets of overlap statistics.
+#' @return A list containing all three sets of overlap statistics
+#'   (`pairwise_overlap`, `control_reuse`, `shared_per_treated`). Note
+#'   this is a different, larger shape than the similarly-named
+#'   [calculate_overlap_statistics()] returns, which only returns the
+#'   `pairwise_overlap` piece for backward compatibility — see
+#'   `FUTURE_WORK.md` for a plan to align these.
 #'
 #' @examples
 #' set.seed(4044440)
@@ -276,32 +314,12 @@ compute_shared_controls_per_treated <- function(matched_matrix) {
 #'                         caliper = 1,
 #'                         rad_method = "adaptive",
 #'                         est_method = "csm")
-#' calculate_overlap_stats_from_table(result_table(mtch, nonzero_weight_only = TRUE))
+#' calculate_overlap_statistics_from_table(result_table(mtch, nonzero_weight_only = TRUE))
 #'
 #' @export
-calculate_overlap_stats_from_table <- function(full_matched_table) {
+calculate_overlap_statistics_from_table <- function(full_matched_table) {
   if (is.null(full_matched_table) || nrow(full_matched_table) == 0) {
-    return(list(
-      pairwise_overlap = list(
-        avg_shared_controls = NA,
-        p75_shared_controls = NA,
-        max_shared_controls = NA,
-        avg_shared_treated = NA,
-        p75_shared_treated = NA,
-        max_shared_treated = NA
-      ),
-      control_reuse = list(
-        mean_reuse = NA,
-        median_reuse = NA,
-        max_reuse = NA
-      ),
-      shared_per_treated = list(
-        mean_shared = NA,
-        median_shared = NA,
-        prop_shared = NA,
-        max_shared = NA
-      )
-    ))
+    return(na_overlap_result())
   }
 
   # Step 1: Get matched matrix
@@ -313,27 +331,7 @@ calculate_overlap_stats_from_table <- function(full_matched_table) {
   })
 
   if (is.null(matched_matrix)) {
-    return(list(
-      pairwise_overlap = list(
-        avg_shared_controls = NA,
-        p75_shared_controls = NA,
-        max_shared_controls = NA,
-        avg_shared_treated = NA,
-        p75_shared_treated = NA,
-        max_shared_treated = NA
-      ),
-      control_reuse = list(
-        mean_reuse = NA,
-        median_reuse = NA,
-        max_reuse = NA
-      ),
-      shared_per_treated = list(
-        mean_shared = NA,
-        median_shared = NA,
-        prop_shared = NA,
-        max_shared = NA
-      )
-    ))
+    return(na_overlap_result())
   }
 
   # Calculate all three metrics
@@ -351,24 +349,10 @@ calculate_overlap_stats_from_table <- function(full_matched_table) {
     results$pairwise_overlap <- tryCatch({
       compute_pairwise_overlap_statistics(pairwise_shared)
     }, error = function(e) {
-      list(
-        avg_shared_controls = NA,
-        p75_shared_controls = NA,
-        max_shared_controls = NA,
-        avg_shared_treated = NA,
-        p75_shared_treated = NA,
-        max_shared_treated = NA
-      )
+      na_pairwise_overlap()
     })
   } else {
-    results$pairwise_overlap <- list(
-      avg_shared_controls = NA,
-      p75_shared_controls = NA,
-      max_shared_controls = NA,
-      avg_shared_treated = NA,
-      p75_shared_treated = NA,
-      max_shared_treated = NA
-    )
+    results$pairwise_overlap <- na_pairwise_overlap()
   }
 
   # Metric 2: Mean control reuse
@@ -406,7 +390,7 @@ calculate_overlap_stats_from_table <- function(full_matched_table) {
 #' Extracts a matched table from a match object and then calculates all three
 #' overlap metrics.
 #'
-#' @param mtch A match object from matching procedures.
+#' @param csm A match object from matching procedures.
 #'
 #' @return A list containing all three sets of overlap statistics.
 #'
@@ -422,17 +406,17 @@ calculate_overlap_stats_from_table <- function(full_matched_table) {
 #' calculate_overlap_statistics_from_match_object(mtch)
 #'
 #' @export
-calculate_overlap_statistics_from_match_object <- function(mtch) {
+calculate_overlap_statistics_from_match_object <- function(csm) {
   # Get the full matched table from the match object
   full_matched_table <- tryCatch({
-    result_table(mtch, nonzero_weight_only = TRUE)
+    result_table(csm, nonzero_weight_only = TRUE)
   }, error = function(e) {
     warning("Failed to get full unit table for overlap statistics: ", e$message, call. = FALSE)
     return(NULL)
   })
 
   # Then call the function to compute the statistics from the table
-  return(calculate_overlap_stats_from_table(full_matched_table))
+  return(calculate_overlap_statistics_from_table(full_matched_table))
 }
 
 
@@ -445,7 +429,7 @@ calculate_overlap_statistics_from_match_object <- function(mtch) {
 #' Wrapper function that maintains backward compatibility with the original
 #' function name but now returns only the pairwise overlap statistics.
 #'
-#' @param mtch A match object from matching procedures
+#' @param csm A match object from matching procedures
 #'
 #' @return Original pairwise overlap statistics for backward compatibility
 #'
@@ -461,7 +445,7 @@ calculate_overlap_statistics_from_match_object <- function(mtch) {
 #' calculate_overlap_statistics(mtch)
 #'
 #' @export
-calculate_overlap_statistics <- function(mtch) {
-  all_stats <- calculate_overlap_statistics_from_match_object(mtch)
+calculate_overlap_statistics <- function(csm) {
+  all_stats <- calculate_overlap_statistics_from_match_object(csm)
   return(all_stats$pairwise_overlap)
 }

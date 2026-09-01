@@ -4,10 +4,10 @@
 \alias{update_matches}
 \title{Update a matching call to change some parameters}
 \usage{
-update_matches(res, data, warn = TRUE, ...)
+update_matches(csm, data, warn = TRUE, ...)
 }
 \arguments{
-\item{res}{A csm_matches object}
+\item{csm}{A csm_matches object}
 
 \item{data}{The data frame to rematch (typically the same data
 originally passed to \code{\link[=get_cal_matches]{get_cal_matches()}})}
@@ -23,7 +23,7 @@ A new csm_matches object with updated parameters
 }
 \description{
 Refits \code{\link[=get_cal_matches]{get_cal_matches()}} on \code{data} reusing all settings (metric,
-scaling, treatment, covariates, etc.) stored on \code{res}, except for
+scaling, treatment, covariates, etc.) stored on \code{csm}, except for
 any settings overridden via \code{...}.
 }
 \examples{
