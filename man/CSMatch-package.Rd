@@ -64,6 +64,15 @@ Che, J., Meng, X., & Miratrix, L. (2024). Caliper Synthetic
 Matching: Generalized Radius Matching with Local Synthetic Controls.
 \url{https://arxiv.org/abs/2411.05246}
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://csmatch-admin.github.io/CSMatch/}
+  \item \url{https://github.com/CSMatch-admin/CSMatch}
+  \item Report bugs at \url{https://github.com/CSMatch-admin/CSMatch/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Luke Miratrix \email{lmiratrix@g.harvard.edu} (\href{https://orcid.org/0000-0002-0078-1906}{ORCID}) [copyright holder]
 
