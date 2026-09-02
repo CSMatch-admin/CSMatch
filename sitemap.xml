@@ -1,10 +1,7 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>/404.html</loc></url>
-<url><loc>/CLAUDE.html</loc></url>
-<url><loc>/FUTURE_WORK.html</loc></url>
 <url><loc>/LICENSE-text.html</loc></url>
 <url><loc>/LICENSE.html</loc></url>
-<url><loc>/TODO.html</loc></url>
 <url><loc>/articles/index.html</loc></url>
 <url><loc>/articles/lalonde-example.html</loc></url>
 <url><loc>/authors.html</loc></url>
@@ -56,6 +53,5 @@
 <url><loc>/reference/treatment_table.html</loc></url>
 <url><loc>/reference/unmatched_units.html</loc></url>
 <url><loc>/reference/update_matches.html</loc></url>
-<url><loc>/to_do_list.html</loc></url>
 </urlset>
 
