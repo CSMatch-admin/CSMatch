@@ -303,7 +303,7 @@ na_overlap_result <- function() {
 #'   this is a different, larger shape than the similarly-named
 #'   [calculate_overlap_statistics()] returns, which only returns the
 #'   `pairwise_overlap` piece for backward compatibility — see
-#'   `FUTURE_WORK.md` for a plan to align these.
+#'   `dev/FUTURE_WORK.md` for a plan to align these.
 #'
 #' @examples
 #' set.seed(4044440)

@@ -2,3 +2,9 @@ url: ~
 template:
   bootstrap: 5
 
+# Disable the llms.txt / per-page .md generation: it crashes on some
+# pandoc versions (pandoc issue with the gfm output format), and a
+# failure there would block the whole CI build (and thus the deploy
+# step) even though the actual HTML site built fine.
+llm-docs: false
+

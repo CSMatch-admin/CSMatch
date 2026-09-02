@@ -15,7 +15,7 @@ A list containing all three sets of overlap statistics
 this is a different, larger shape than the similarly-named
 \code{\link[=calculate_overlap_statistics]{calculate_overlap_statistics()}} returns, which only returns the
 \code{pairwise_overlap} piece for backward compatibility — see
-\code{FUTURE_WORK.md} for a plan to align these.
+\code{dev/FUTURE_WORK.md} for a plan to align these.
 }
 \description{
 Calculates all three overlap metrics for a matched dataset from a

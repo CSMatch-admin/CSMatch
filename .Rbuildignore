@@ -11,7 +11,7 @@
 ^figures$
 ^writeup$
 ^old_code$
-^to_do_list\.md$
+^dev$
 ^CLAUDE\.md$
 ^cran-comments\.md$
 ^_pkgdown\.yml$
