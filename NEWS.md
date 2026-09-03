@@ -1,6 +1,6 @@
 # CSMatch 0.1.0
 
-Initial CRAN submission.
+Initial development release.
 
 * Implements Caliper Synthetic Matching (CSM): radius/caliper matching
   on a user-specified covariate distance metric, with an optional
