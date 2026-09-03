@@ -68,20 +68,23 @@
 <p>This vignette walks through fitting Caliper Synthetic Matching (CSM)
 to a real, and unusually difficult, dataset: the LaLonde job-training
 data. The goal here is not to re-derive the method (see the paper, Che,
-Meng, &amp; Miratrix, 2024, <em>Caliper Synthetic Matching</em>, for
+Meng, &amp; Miratrix, 2026, <em>Caliper Synthetic Matching</em>, for
 that) but to show the sequence of decisions an analyst actually makes
 when using the <code>CSMatch</code> package – choosing a distance metric
 and caliper, checking match quality, comparing weighting schemes, and
 finally estimating an effect – and which package functions support each
 decision.</p>
-<p>The full script this vignette is adapted from, including data
-cleaning and additional diagnostics, lives in
+<p>This vignette is a version of the supplement of the main paper (with
+some text quoted verbatum), and the code is adapted from the scripts in
 <code>scripts/lalonde-analysis/</code> in the package’s GitHub
-repository.</p>
+repository. See that directory for data cleaning code as well.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://miratrixcareslab.github.io/CSMatch/">CSMatch</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
+<p><strong>AI Declaration:</strong> This summary vignette was generated
+by Claude AI from the aforementioned materials, and then reviewed and
+edited by Luke Miratrix.</p>
 <div class="section level2">
 <h2 id="the-data">The data<a class="anchor" aria-label="anchor" href="#the-data"></a>
 </h2>
@@ -98,7 +101,10 @@ very different from the general CPS population (much lower prior
 earnings, different demographics), so good matches are scarce for many
 units. We use this dataset to illustrate not just the mechanics of the
 package but also the trade-offs analysts have to navigate when overlap
-is poor.</p>
+is poor. (We ignore issues of whether there is any reasonable
+comparability at all, e.g., consistency in measurement of variables, and
+we are ignoring also whether selection on observables is likely to hold
+here. That is what the WSC will ascertain.)</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lalonde_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"lalonde_for_analysis.rds"</span>, package <span class="op">=</span> <span class="st">"CSMatch"</span><span class="op">)</span></span>
@@ -110,10 +116,10 @@ is poor.</p>
 <span><span class="co">#&gt;     0     1 </span></span>
 <span><span class="co">#&gt; 15992   260</span></span></code></pre></div>
 <p>The treatment indicator is <code>Z</code> (1 = NSWD, 0 = CPS) and the
-outcome <code>Y</code> is 1978 earnings. Covariates have already been
-renamed to <code>X1</code>-<code>X8</code>: indicators for race,
-ethnicity, marital status, and lack of a degree, plus age, years of
-education, and earnings in 1974 and 1975.</p>
+outcome <code>Y</code> is 1978 earnings. Covariates
+<code>X1</code>-<code>X8</code> are indicators for race, ethnicity,
+marital status, and lack of a degree, plus age, years of education, and
+earnings in 1974 and 1975.</p>
 </div>
 <div class="section level2">
 <h2 id="deciding-which-covariates-matter">Deciding which covariates matter<a class="anchor" aria-label="anchor" href="#deciding-which-covariates-matter"></a>
@@ -132,15 +138,21 @@ choices. A simple propensity score model is enough for this:</p>
 <span><span class="va">ps_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">Z</span> <span class="op">~</span> <span class="va">X1</span> <span class="op">+</span> <span class="va">X2</span> <span class="op">+</span> <span class="va">X3</span> <span class="op">+</span> <span class="va">X4</span> <span class="op">+</span> <span class="va">X5</span> <span class="op">+</span> <span class="va">X6</span> <span class="op">+</span> <span class="va">X7</span> <span class="op">+</span> <span class="va">X8</span>,</span>
 <span>              data <span class="op">=</span> <span class="va">lalonde_df</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">lalonde_df</span><span class="op">$</span><span class="va">logit_p</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ps_fit</span>, type <span class="op">=</span> <span class="st">"link"</span><span class="op">)</span></span></code></pre></div>
-<p>Looking at standardized coefficients (not shown here) flags race,
-Hispanic ethnicity, having a college degree, and 1975 earnings as the
-most predictive covariates, and overlap on the propensity score is poor:
-the vast majority of CPS control units look nothing like a typical NSWD
-participant. This tells us two things: (1) we should make sure our
-distance metric weights these variables appropriately, and (2) we should
-expect many treated units to have no good match at all, which the
-caliper mechanics below are designed to handle gracefully.</p>
+<span><span class="va">lalonde_df</span><span class="op">$</span><span class="va">logit_p</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ps_fit</span>, type <span class="op">=</span> <span class="st">"link"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span> <span class="va">lalonde_df</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span> <span class="va">logit_p</span>, group<span class="op">=</span><span class="va">Z</span>, col<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">Z</span><span class="op">)</span> <span class="op">)</span> <span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_density.html" class="external-link">geom_density</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="lalonde-example_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="576"></p>
+<p>Looking at standardized coefficients (see paper supplement; not shown
+here) flags race, Hispanic ethnicity, having a college degree, and 1975
+earnings as the most predictive covariates. Also, overlap on the
+propensity score is poor: the vast majority of CPS control units look
+nothing like a typical NSWD participant.</p>
+<p>This tells us two things: (1) we should make sure our distance metric
+weights the identified variables appropriately, and (2) we should expect
+many treated units to have no good match at all, which the caliper
+mechanics below are designed to handle gracefully.</p>
 <p>We carry two derived covariates forward into the matching step
 alongside the original <code>X1</code>-<code>X8</code>:
 <code>COLL</code> (college completion) and <code>logit_p</code> (the
@@ -194,10 +206,9 @@ covariates above.</li>
 <span>  COLL <span class="op">=</span> <span class="fl">1</span> <span class="op">/</span> <span class="fl">0.5</span>,     <span class="co"># College completion</span></span>
 <span>  logit_p <span class="op">=</span> <span class="fl">1</span> <span class="op">/</span> <span class="fl">0.35</span>  <span class="co"># Propensity score (logit scale)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>A caliper of 1 on this scaled distance is what we will start with: a
-unit is a candidate match only if it is within all of these substantive
-tolerances at once (or the corresponding one for whichever covariate
-happens to be the “binding” one for that pair).</p>
+<p>A caliper of 1 on this scaled distance is what we will start with:
+under the infinity-norm distance, a unit is a candidate match only if it
+is within <em>all</em> of these substantive tolerances at once.</p>
 </div>
 <div class="section level2">
 <h2 id="fitting-an-initial-match">Fitting an initial match<a class="anchor" aria-label="anchor" href="#fitting-an-initial-match"></a>
@@ -230,12 +241,16 @@ being dropped.</p>
 <span><span class="co">#&gt;  Target caliper = 1 </span></span>
 <span><span class="co">#&gt; Max distance ranges 0.333 - 4.299 </span></span>
 <span><span class="co">#&gt;  scaling: 1000, 1000, 1000, 1000, 0.333, ...</span></span></code></pre></div>
-<p>The printout already tells us this is a hard matching problem: many
-treated units needed an adaptive caliper well above 1 to find even one
-control.</p>
+<p>The printout tells us that around 10% of the treated units needed an
+adaptive caliper above 1 to find even one control.</p>
+<p>We call those treated units within the caliper “feasible” (they have
+a match within the target caliper) and the remainder as “infeasible”
+(their individual adaptive caliper had to grow above the target to get
+any controls). We will come back to this feasible/infeasible split when
+estimating effects.</p>
 </div>
 <div class="section level2">
-<h2 id="picking-a-tighter-caliper-from-the-data">Picking a tighter caliper from the data<a class="anchor" aria-label="anchor" href="#picking-a-tighter-caliper-from-the-data"></a>
+<h2 id="picking-a-caliper-from-the-data">Picking a caliper from the data<a class="anchor" aria-label="anchor" href="#picking-a-caliper-from-the-data"></a>
 </h2>
 <p>An initial caliper of 1 was really just a starting point (it is large
 enough that everyone gets matched, one way or another). To pick a more
@@ -250,10 +265,11 @@ target coverage rate:</p>
 <p><img src="lalonde-example_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" alt="" width="576"></p>
 <p>We ask for the caliper that would give about two-thirds of treated
 units at least one match within caliper (a deliberately tight target,
-chosen here to leave a sizeable “infeasible” group to illustrate caliper
-sensitivity below). The plot both shows this graphically and returns the
-value as an attribute, so we can use it directly rather than reading it
-off the plot:</p>
+chosen here so we get a good estimate on good fraction of the treated
+units. We can then do a caliper sensitivity analysis to see how much it
+matters. See below). The plot both shows the needed value on the plot
+and also returns the value as an attribute, so we can use it
+directly:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">new_caliper</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">cdp</span>, <span class="st">"caliper"</span><span class="op">)</span></span>
 <span><span class="va">new_caliper</span></span>
@@ -273,10 +289,8 @@ setting from the original call:</p>
 <span><span class="co">#&gt;  Target caliper = 0.55213382161458 </span></span>
 <span><span class="co">#&gt; Max distance ranges 0 - 4.299 </span></span>
 <span><span class="co">#&gt;  scaling: 1000, 1000, 1000, 1000, 0.333, ...</span></span></code></pre></div>
-<p>Some treated units are now “feasible” (they have a match within the
-target caliper of 0.552) and some are not (their individual adaptive
-caliper had to grow further). We will come back to this
-feasible/infeasible split when estimating effects.</p>
+<p>We now have more infeasible matches because we are more aggressive
+with defining good match quality.</p>
 </div>
 <div class="section level2">
 <h2 id="checking-covariate-balance">Checking covariate balance<a class="anchor" aria-label="anchor" href="#checking-covariate-balance"></a>
@@ -291,11 +305,13 @@ introduce outcome-driven bias (“fishing”).</p>
 <span>          covs_names <span class="op">=</span> <span class="va">covs_names</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Covariate Balance (LaLonde)"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="lalonde-example_files/figure-html/unnamed-chunk-9-1.png" class="r-plt" alt="" width="576"></p>
-<p>The love plot adds treated units one at a time, in order of
-increasing adaptive caliper (i.e. easiest-to-match units first), and
-tracks the running treated-vs-control mean difference on each covariate.
-A roughly flat, near-zero line means balance does not deteriorate as we
-absorb harder-to-match units.</p>
+<p>The love plot adds treated units beyond the feasible set one unit at
+a time, in order of increasing adaptive caliper (i.e. easiest-to-match
+units first), and tracks the running treated-vs-control mean difference
+on each covariate. A roughly flat, near-zero line means balance does not
+deteriorate as we absorb harder-to-match units. Interestingly, balance
+<em>improves</em> for this dataset as we include the hard to match
+units. This is not what we would typically find, nor expect.</p>
 </div>
 <div class="section level2">
 <h2 id="comparing-weighting-schemes-before-looking-at-outcomes">Comparing weighting schemes before looking at outcomes<a class="anchor" aria-label="anchor" href="#comparing-weighting-schemes-before-looking-at-outcomes"></a>
@@ -309,24 +325,109 @@ about the bias/variance trade-off <em>before</em> committing to a
 weighting scheme:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sensitivity_table.html">sensitivity_table</a></span><span class="op">(</span><span class="va">lalonde_scm</span>, include_distances <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">Estimate</span>, <span class="va">N_T</span>, <span class="va">N_C</span>, <span class="va">ESS_C</span>, <span class="va">mean_dist</span>, <span class="va">median_dist</span>, <span class="va">SE_star</span>, <span class="va">SE_ratio</span>, <span class="va">bias_ratio</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 9</span></span></span>
-<span><span class="co">#&gt;   Estimate   N_T   N_C ESS_C mean_dist median_dist SE_star SE_ratio bias_ratio</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> ATT        260   178  65.1     0.454      0.333    0.139     1.08      0.863</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> ATT_1nn    260   195  69.7     0.508      0.333    0.135     1.06      0.965</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> ATT_raw    260   703  80.1     0.526      0.333    0.128     1         1    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> FATT       173   134  45.6     0.161      0.031<span style="text-decoration: underline;">7</span>   0.167     1.30      0.306</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> FATT_1nn   173   142  51.9     0.240      0.333    0.158     1.24      0.456</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> FATT_raw   173   654  66.2     0.267      0.25     0.144     1.13      0.508</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">Estimate</span>, <span class="va">N_T</span>, <span class="va">N_C</span>, <span class="va">ESS_C</span>, <span class="va">mean_dist</span>, <span class="va">median_dist</span>, <span class="va">SE_star</span>, <span class="va">SE_ratio</span>, <span class="va">bias_ratio</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span> digits <span class="op">=</span> <span class="fl">2</span> <span class="op">)</span></span></code></pre></div>
+<table class="table">
+<colgroup>
+<col width="12%">
+<col width="5%">
+<col width="5%">
+<col width="8%">
+<col width="13%">
+<col width="16%">
+<col width="10%">
+<col width="12%">
+<col width="15%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">Estimate</th>
+<th align="right">N_T</th>
+<th align="right">N_C</th>
+<th align="right">ESS_C</th>
+<th align="right">mean_dist</th>
+<th align="right">median_dist</th>
+<th align="right">SE_star</th>
+<th align="right">SE_ratio</th>
+<th align="right">bias_ratio</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">ATT</td>
+<td align="right">260</td>
+<td align="right">178</td>
+<td align="right">65.12</td>
+<td align="right">0.45</td>
+<td align="right">0.33</td>
+<td align="right">0.14</td>
+<td align="right">1.08</td>
+<td align="right">0.86</td>
+</tr>
+<tr class="even">
+<td align="left">ATT_1nn</td>
+<td align="right">260</td>
+<td align="right">195</td>
+<td align="right">69.66</td>
+<td align="right">0.51</td>
+<td align="right">0.33</td>
+<td align="right">0.13</td>
+<td align="right">1.06</td>
+<td align="right">0.97</td>
+</tr>
+<tr class="odd">
+<td align="left">ATT_raw</td>
+<td align="right">260</td>
+<td align="right">703</td>
+<td align="right">80.15</td>
+<td align="right">0.53</td>
+<td align="right">0.33</td>
+<td align="right">0.13</td>
+<td align="right">1.00</td>
+<td align="right">1.00</td>
+</tr>
+<tr class="even">
+<td align="left">FATT</td>
+<td align="right">173</td>
+<td align="right">134</td>
+<td align="right">45.56</td>
+<td align="right">0.16</td>
+<td align="right">0.03</td>
+<td align="right">0.17</td>
+<td align="right">1.30</td>
+<td align="right">0.31</td>
+</tr>
+<tr class="odd">
+<td align="left">FATT_1nn</td>
+<td align="right">173</td>
+<td align="right">142</td>
+<td align="right">51.90</td>
+<td align="right">0.24</td>
+<td align="right">0.33</td>
+<td align="right">0.16</td>
+<td align="right">1.24</td>
+<td align="right">0.46</td>
+</tr>
+<tr class="even">
+<td align="left">FATT_raw</td>
+<td align="right">173</td>
+<td align="right">654</td>
+<td align="right">66.23</td>
+<td align="right">0.27</td>
+<td align="right">0.25</td>
+<td align="right">0.14</td>
+<td align="right">1.13</td>
+<td align="right">0.51</td>
+</tr>
+</tbody>
+</table>
 <p><code>ESS_C</code> is the control group’s effective sample size – how
-many “independent” control units the weighting scheme is effectively
-using after accounting for reuse and unequal weights.
-<code>mean_dist</code>/<code>median_dist</code> summarize how close each
-treated unit’s (weighted) synthetic control is to the treated unit
-itself, which relates to potential extrapolation bias: the closer to 0,
-the less we are relying on the model implicitly extrapolating between
-units. <code>SE_star</code> is a rule-of-thumb pseudo-SE,
+many hypothetical “independent” control units would give the same
+precision as the weighting scheme, after accounting for reuse and
+unequal weights. <code>mean_dist</code>/<code>median_dist</code>
+summarize how close each treated unit’s (weighted) synthetic control is
+to the treated unit itself, which relates to potential extrapolation
+bias: the closer to 0, the less we are relying on the model implicitly
+extrapolating between units. <code>SE_star</code> is a rule-of-thumb
+pseudo-SE,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msqrt><mrow><mn>1</mn><mi>/</mi><msub><mi>N</mi><mi>T</mi></msub><mo>+</mo><mn>1</mn><mi>/</mi><msub><mtext mathvariant="normal">ESS</mtext><mi>C</mi></msub></mrow></msqrt><annotation encoding="application/x-tex">\sqrt{1/N_T + 1/\text{ESS}_C}</annotation></semantics></math>,
 useful for <em>relative</em> comparisons across rows here, not as a
 standalone SE. <code>SE_ratio</code> and <code>bias_ratio</code> express
@@ -368,19 +469,21 @@ units that had a match within our chosen target caliper.</li>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: t &lt;dbl&gt;</span></span></span></code></pre></div>
 <p>Recall the target here is 0 (we are matching NSWD controls to CPS
 “controls”). Both estimates are statistically indistinguishable from 0
-given their standard errors, which is reassuring given how difficult
-this matching problem is – but the SATT and FSATT need not always agree.
-When they diverge, it is worth asking why:</p>
+given their standard errors, which is reassuring given the within study
+comparison – but the SATT and FSATT need not always agree. When they
+diverge, it is worth asking why:</p>
 <ul>
 <li>If the infeasible treated units look systematically different from
 the feasible ones, the discrepancy may reflect real effect
 heterogeneity, in which case the SATT (using everyone) is the more
 generalizable estimate.</li>
-<li>If instead it reflects a steep drop-off in match quality for the
-infeasible units, the FSATT (using only well-matched units) may be the
-more trustworthy estimate, at the cost of generalizing to a narrower
-population.</li>
+<li>If instead the SATT reflects bias from a steep drop-off in match
+quality for the infeasible units, the FSATT (using only well-matched
+units) may be the more trustworthy estimate, at the cost of generalizing
+to a narrower population.</li>
 </ul>
+<p>We note that the standard errors are estimated with our recommended
+methods. Other options are possible.</p>
 </div>
 <div class="section level2">
 <h2 id="checking-robustness-to-the-caliper-choice">Checking robustness to the caliper choice<a class="anchor" aria-label="anchor" href="#checking-robustness-to-the-caliper-choice"></a>
@@ -389,8 +492,8 @@ population.</li>
 checking how sensitive the ATT/FATT estimates are to it.
 <code><a href="../reference/caliper_sensitivity_table.html">caliper_sensitivity_table()</a></code> refits the match across a grid
 of calipers (this is the most expensive step in this vignette – we use a
-coarser grid, <code>R = 10</code>, than the <code>R = 30</code> used for
-the smoother curves in the paper):</p>
+coarser grid here, <code>R = 10</code>, than the <code>R = 30</code>
+used for the smoother curves in the paper):</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cal_sens_tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/caliper_sensitivity_table.html">caliper_sensitivity_table</a></span><span class="op">(</span></span>
 <span>  <span class="va">lalonde_scm</span>, <span class="va">lalonde_df</span>,</span>
@@ -409,7 +512,7 @@ move (or don’t) as the caliper widens is a useful diagnostic: here, the
 raw average estimate drifts steadily away from 0 as poorer matches are
 absorbed, while CSM’s synthetic weighting stays closer to 0 across the
 range – evidence that the synthetic step is doing real work to control
-extrapolation bias in this hard-to-match setting.</p>
+extrapolation bias.</p>
 </div>
 <div class="section level2">
 <h2 id="summary-the-decisions-in-order">Summary: the decisions, in order<a class="anchor" aria-label="anchor" href="#summary-the-decisions-in-order"></a>
@@ -417,24 +520,26 @@ extrapolation bias in this hard-to-match setting.</p>
 <ol style="list-style-type: decimal">
 <li>
 <strong>Explore covariate importance and overlap</strong> (e.g. via
-a propensity model) before touching the matching call, to know where
-calipers need to bind tightly.</li>
+a propensity model) before touching the matching call, to help determine
+where calipers need to bind tightly.</li>
 <li>
 <strong>Choose a distance metric and per-covariate scaling</strong>
 that encodes substantive tolerances (e.g. “a 3-year age gap is as bad as
 a $5,000 earnings gap”), using <code><a href="../reference/get_cal_matches.html">get_cal_matches()</a></code>’s
-<code>scaling</code> argument – exact-match binaries with a large
-scaling constant.</li>
+<code>scaling</code> argument. You can exact-match categorical values
+with a large scaling constant.</li>
 <li>
 <strong>Pick a caliper using
 <code><a href="../reference/caliper_distance_plot.html">caliper_distance_plot()</a></code></strong> against a target coverage
 rate, and refit cheaply with <code><a href="../reference/update_matches.html">update_matches()</a></code> as that
-choice changes.</li>
+choice changes. (This step is not necessary if the initial work of what
+determines a “good match” is settled from the prior steps.)</li>
 <li>
 <strong>Check balance with <code><a href="../reference/love_plot.html">love_plot()</a></code></strong> and
 compare weighting schemes with <code><a href="../reference/sensitivity_table.html">sensitivity_table()</a></code> – all
 before looking at the outcome, so these choices can’t be accused of
-fishing.</li>
+fishing. You can tweak your distance measure and/or calipers to try and
+get good balance, if desired.</li>
 <li>
 <strong>Estimate both the SATT and FSATT with
 <code><a href="../reference/estimate_ATT.html">estimate_ATT()</a></code></strong>, and use
