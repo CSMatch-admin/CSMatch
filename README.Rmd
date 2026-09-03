@@ -46,7 +46,7 @@ You can install the development version of CSMatch from [GitHub](https://github.
 
 ```
 # install.packages("devtools")  # (if needed)
-devtools::install_github("jche/CSMatch")
+devtools::install_github("MiratrixCARESLab/CSMatch")
 ```
 
 

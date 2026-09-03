@@ -1,5 +1,5 @@
 # install.packages("devtools")  # (if needed)
-# devtools::install_github("jche/CSMatch")
+# devtools::install_github("MiratrixCARESLab/CSMatch")
 
 library(CSM)
 

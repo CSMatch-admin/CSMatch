@@ -25,7 +25,7 @@ You can install the development version of CSM from
 [GitHub](https://github.com/) with:
 
     # install.packages("devtools")  # (if needed)
-    devtools::install_github("jche/CSMatch")
+    devtools::install_github("MiratrixCARESLab/CSMatch")
 
 # Quick demo of package
 

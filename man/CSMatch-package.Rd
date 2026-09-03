@@ -67,9 +67,9 @@ Matching: Generalized Radius Matching with Local Synthetic Controls.
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://csmatch-admin.github.io/CSMatch/}
-  \item \url{https://github.com/CSMatch-admin/CSMatch}
-  \item Report bugs at \url{https://github.com/CSMatch-admin/CSMatch/issues}
+  \item \url{https://miratrixcareslab.github.io/CSMatch/}
+  \item \url{https://github.com/MiratrixCARESLab/CSMatch}
+  \item Report bugs at \url{https://github.com/MiratrixCARESLab/CSMatch/issues}
 }
 
 }
