@@ -1,3 +1,5 @@
+
+
 # Future work
 
 Lower-priority follow-ups noted during the 2026-08-31 naming/simplification review (see `TODO.md` for the fuller code-review history). These are deliberately deferred, not forgotten.

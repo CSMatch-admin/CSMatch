@@ -1,14 +1,5 @@
 
 
-# TO DO List
-
-- Move the wrappers file to the scripts/simulation folder (it is
-                                                           utilities for simulation, not core package stuff)
-- Keep boot_CSM (and the utility functions it uses), but move the other
-bootstrap stuff out of the main package.
-- Make a separate folder for the inference simulation and it should have
-the annalysis file and the simulation file in it.
-
 # Notes on scripts directory
 
 In the scripts directory are several folders:
