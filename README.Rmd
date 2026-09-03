@@ -35,9 +35,10 @@ library( CSMatch )
 This package implements the Caliper Synthetic Matching approach, which is a blend of radius matching using distance metrics put on the covariate distribution itself, and the synthetic control method.
 In particular, it identifies sets of units local to each treated unit in turn, and then makes a synthetic control for each treated unit using those local units.
 
-Details can be found on the paper: [Che et. al. (2024), Caliper Synthetic Matching](https://arxiv.org/abs/2411.05246)
+Details can be found on the paper: [Che et. al. (2026), Caliper Synthetic Matching](https://arxiv.org/abs/2411.05246). This paper was recently accepted at _Political Analyis_.
 
-The GitHub repo also has replication materials for the associated paper in the `scripts` directory; see below for further discussion of this added-on code.  The installed package will ignore `scripts`.
+The GitHub repo has replication materials for the associated paper in the `scripts` directory; see below for further discussion of this added-on code.  The installed package will ignore `scripts`.
+We also provide [online documentation for the package](https://miratrixcareslab.github.io/CSMatch/) on the GitHub site. 
 
 
 ## Installation
@@ -52,13 +53,17 @@ devtools::install_github("MiratrixCARESLab/CSMatch")
 
 # Quick demo of package 
 
-We generate a small toy dataset to illustrate the main methods of interest:
+Below we show a quick walk-through of some of the methods of the package.
+Also see our vignette that does a more careful sample data analysis of the Lalonde dataset, based off the primary paper noted above.
+
+To illustrate the package, we first generate a small toy dataset to illustrate the main methods of interest (we use a data generator that we used in our simulation studies):
 
 ```{r}
-set.seed( 4044440 )
-dat <- gen_one_toy(nt = 5)
-dat
-ggplot( dat, aes( X1, X2, color = Z ) ) + geom_point() +
+set.seed( 404454440 )
+dat <- gen_one_toy(nt = 6, nc=100)
+names( dat )
+
+ggplot( dat, aes( X1, X2, color = as.factor(Z) ) ) + geom_point() +
   coord_fixed()
 ```
 
@@ -66,36 +71,55 @@ To calculate matches, call `get_cal_matches()`--it will match, make synthetic co
 ```{r}
 mtch <- get_cal_matches( dat, 
                          form = Z ~ X1 + X2,
-                         metric = "maximum",
+                         metric = "euclidean",
                          scaling = c( 1/0.2, 1/0.2 ),
-                         caliper = 1, 
+                         caliper = 0.6, 
                          rad_method = "adaptive", 
                          est_method = "csm" ) 
 mtch
 ```
 
+See the vignette for discussion on how to select scaling and calipers.
+
 There are a variety of things you can pull from the result.
-You can get a list of statistics on the treated units:
+First, you can get a list of statistics on the treated units such as the number of control units they were matched to:
 ```{r}
 mtch$treatment_table
 ```
 
-You can see all the units used, grouped by subclass:
+You can see all the units used, grouped by each little matched set corresponding to each treated unit:
 ```{r}
-result_table(mtch, nonzero_weight_only = TRUE ) 
+rt <- result_table(mtch, nonzero_weight_only = TRUE ) 
+```
+
+You can even plot those units!
+
+```{r}
+ggplot( rt, aes( X1, X2, col=as.factor(Z) ) ) +
+  geom_point() +
+   ggforce::geom_circle(
+    data = filter(rt, Z == 1),
+    aes(x0 = X1, y0 = X2, r = 0.6*0.2),
+    inherit.aes = FALSE,
+    color = "black",
+    linetype = "dashed",
+    alpha = 0.6
+  ) +
+  coord_fixed()
 ```
 
 You can filter to only matches within the initial caliper:
 ```{r}
-result_table( mtch, feasible_only = TRUE )
+rt_feas <- result_table( mtch, feasible_only = TRUE )
 ```
+
 
 You can also get the final generated result as a data.frame by casting the result into a dataframe:
 ```{r}
-head( as.data.frame( mtch ), n = 10 )
+head( as.data.frame( mtch ), n = 4 )
 ```
 
-You can estimate impacts on the matched dataset using whatever tools you want.
+Finally, you can estimate impacts on the matched dataset using whatever tools you want.
 The option discussed in our paper is implemented as so:
 ```{r}
 estimate_ATT( mtch )
@@ -104,7 +128,7 @@ estimate_ATT( mtch )
 
 # Notes on Dependencies
 
-This package has some tricky dependencies.
+This package has some tricky dependencies if you are using the simulation methods.
 In particular, it (optionally) uses a DGP (for simulation) from ACIC 2016.
 You have to install it first from GitHub:
 
@@ -112,7 +136,7 @@ You have to install it first from GitHub:
 remotes::install_github("vdorie/aciccomp/2016")
 ```
 
-You should not need this package unless you are generating synthetic data.
+You should not need this package unless you are generating the ACIC synthetic data.
 
 
 

@@ -12,16 +12,20 @@ particular, it identifies sets of units local to each treated unit in
 turn, and then makes a synthetic control for each treated unit using
 those local units.
 
-Details can be found on the paper: [Che et. al. (2024), Caliper
-Synthetic Matching](https://arxiv.org/abs/2411.05246)
+Details can be found on the paper: [Che et. al. (2026), Caliper
+Synthetic Matching](https://arxiv.org/abs/2411.05246). This paper was
+recently accepted at *Political Analyis*.
 
-The GitHub repo also has replication materials for the associated paper
-in the `scripts` directory; see below for further discussion of this
-added-on code. The installed package will ignore `scripts`.
+The GitHub repo has replication materials for the associated paper in
+the `scripts` directory; see below for further discussion of this
+added-on code. The installed package will ignore `scripts`. We also
+provide [online documentation for the
+package](https://miratrixcareslab.github.io/CSMatch/) on the GitHub
+site.
 
 ## Installation
 
-You can install the development version of CSM from
+You can install the development version of CSMatch from
 [GitHub](https://github.com/) with:
 
     # install.packages("devtools")  # (if needed)
@@ -29,29 +33,24 @@ You can install the development version of CSM from
 
 # Quick demo of package
 
-We generate a small toy dataset to illustrate the main methods of
-interest:
+Below we show a quick walk-through of some of the methods of the
+package. Also see our vignette that does a more careful sample data
+analysis of the Lalonde dataset, based off the primary paper noted
+above.
+
+To illustrate the package, we first generate a small toy dataset to
+illustrate the main methods of interest (we use a data generator that we
+used in our simulation studies):
 
 ``` r
-set.seed( 4044440 )
-dat <- gen_one_toy(nt = 5)
-dat
-#> # A tibble: 505 × 11
-#>        X1    X2 Z        noise Y0_denoised    Y0 Y1_denoised    Y1     Y
-#>     <dbl> <dbl> <lgl>    <dbl>       <dbl> <dbl>       <dbl> <dbl> <dbl>
-#>  1 0.404  0.244 TRUE   0.131          5.05  5.18        7.00  7.13  7.13
-#>  2 0.0330 0.223 TRUE   0.215          4.70  4.91        5.46  5.68  5.68
-#>  3 0.863  0.838 TRUE  -0.00439        4.95  4.95       10.1  10.0  10.0 
-#>  4 0.835  0.658 TRUE  -0.0932         4.93  4.84        9.41  9.32  9.32
-#>  5 0.802  0.779 TRUE  -0.128          5.06  4.93        9.80  9.67  9.67
-#>  6 0.653  0.227 FALSE  0.321          4.22  4.54        6.86  7.18  4.54
-#>  7 0.805  0.135 FALSE -0.682          3.03  2.34        5.84  5.16  2.34
-#>  8 0.802  0.386 FALSE  0.606          4.26  4.86        7.82  8.43  4.86
-#>  9 0.709  0.137 FALSE -0.0348         3.51  3.48        6.05  6.01  3.48
-#> 10 1.06   0.342 FALSE  0.0267         2.72  2.75        6.93  6.96  2.75
-#> # ℹ 495 more rows
-#> # ℹ 2 more variables: Y_denoised <dbl>, id <int>
-ggplot( dat, aes( X1, X2, color = Z ) ) + geom_point() +
+set.seed( 404454440 )
+dat <- gen_one_toy(nt = 6, nc=100)
+names( dat )
+#>  [1] "X1"          "X2"          "Z"           "noise"       "Y0_denoised"
+#>  [6] "Y0"          "Y1_denoised" "Y1"          "Y"           "Y_denoised" 
+#> [11] "id"
+
+ggplot( dat, aes( X1, X2, color = as.factor(Z) ) ) + geom_point() +
   coord_fixed()
 ```
 
@@ -64,132 +63,107 @@ stored as an `csm_matches` object:
 ``` r
 mtch <- get_cal_matches( dat, 
                          form = Z ~ X1 + X2,
-                         metric = "maximum",
+                         metric = "euclidean",
                          scaling = c( 1/0.2, 1/0.2 ),
-                         caliper = 1, 
+                         caliper = 0.6, 
                          rad_method = "adaptive", 
                          est_method = "csm" ) 
 mtch
-#> csm_matches: matching with "maximum" distance and "adaptive" radii
+#> csm_matches: matching with "euclidean" distance and "adaptive" radii
 #> aggregating sets with "csm" method 
 #> match covariates: X1, X2
-#> 5 treated units matched to 91 of 500 control units 
-#>  (0 exact matches, 5 below caliper, 0 above caliper) 
-#> Adaptive calipers: 1, 1, 1, 1, 1 
-#>  Target caliper = 1 
-#> Max distance ranges 0.962 - 0.983 
+#> 6 treated units matched to 8 of 100 control units 
+#>  (0 exact matches, 4 below caliper, 2 above caliper) 
+#> Adaptive calipers: 0.6, 0.6, 0.6, 0.676, 0.6, ... 
+#>  Target caliper = 0.6 
+#> Max distance ranges 0.132 - 0.693 
 #>  scaling: 5, 5
 ```
 
-There are a variety of things you can pull from the result. You can get
-a list of statistics on the treated units:
+See the vignette for discussion on how to select scaling and calipers.
+
+There are a variety of things you can pull from the result. First, you
+can get a list of statistics on the treated units such as the number of
+control units they were matched to:
 
 ``` r
 mtch$treatment_table
-#> # A tibble: 5 × 9
+#> # A tibble: 6 × 9
 #>   id    subclass    nc   ess min_dist max_dist adacal feasible matched
 #>   <chr> <chr>    <dbl> <dbl>    <dbl>    <dbl>  <dbl>    <dbl>   <dbl>
-#> 1 1     1           38  2.83    0.365    0.975      1        1       1
-#> 2 2     2           20  1.79    0.303    0.975      1        1       1
-#> 3 3     3           13  1.86    0.243    0.962      1        1       1
-#> 4 4     4           23  2.16    0.245    0.983      1        1       1
-#> 5 5     5           24  2.57    0.344    0.972      1        1       1
+#> 1 1     1            2  2.00    0.514    0.565  0.6          1       1
+#> 2 2     2            2  2.00    0.547    0.587  0.6          1       1
+#> 3 3     3            4  1.67    0.283    0.562  0.6          1       1
+#> 4 4     4            1  1       0.676    0.676  0.676        0       1
+#> 5 5     5            1  1       0.132    0.132  0.6          1       1
+#> 6 6     6            1  1       0.693    0.693  0.693        0       1
 ```
 
-You can see all the units used, grouped by subclass:
+You can see all the units used, grouped by each little matched set
+corresponding to each treated unit:
 
 ``` r
-result_table(mtch, nonzero_weight_only = TRUE ) 
-#> # A tibble: 20 × 15
-#>    id        X1     X2 Z        noise Y0_denoised    Y0 Y1_denoised    Y1     Y
-#>    <chr>  <dbl>  <dbl> <lgl>    <dbl>       <dbl> <dbl>       <dbl> <dbl> <dbl>
-#>  1 1     0.404  0.244  TRUE   0.131          5.05  5.18        7.00  7.13  7.13
-#>  2 86    0.585  0.129  FALSE -0.271          4.04  3.77        6.18  5.91  3.77
-#>  3 351   0.258  0.0667 FALSE  0.00759        4.76  4.76        5.73  5.74  4.76
-#>  4 417   0.356  0.425  FALSE -0.0132         5.24  5.23        7.58  7.57  5.23
-#>  5 2     0.0330 0.223  TRUE   0.215          4.70  4.91        5.46  5.68  5.68
-#>  6 419   0.0223 0.298  FALSE -0.135          4.52  4.39        5.49  5.35  4.39
-#>  7 444   0.0137 0.157  FALSE  0.427          4.70  5.13        5.21  5.64  5.13
-#>  8 482   0.102  0.418  FALSE  0.191          4.54  4.73        6.10  6.29  4.73
-#>  9 3     0.863  0.838  TRUE  -0.00439        4.95  4.95       10.1  10.0  10.0 
-#> 10 359   0.671  0.885  FALSE  0.438          4.80  5.24        9.47  9.90  5.24
-#> 11 368   0.871  0.789  FALSE -0.462          4.95  4.49        9.93  9.47  4.49
-#> 12 445   0.878  0.951  FALSE  0.104          4.79  4.89       10.3  10.4   4.89
-#> 13 4     0.835  0.658  TRUE  -0.0932         4.93  4.84        9.41  9.32  9.32
-#> 14 31    0.649  0.495  FALSE -0.784          5.14  4.35        8.57  7.79  4.35
-#> 15 423   0.954  0.790  FALSE  0.386          4.75  5.13        9.98 10.4   5.13
-#> 16 436   0.911  0.462  FALSE -0.359          4.05  3.69        8.17  7.81  3.69
-#> 17 5     0.802  0.779  TRUE  -0.128          5.06  4.93        9.80  9.67  9.67
-#> 18 158   0.814  0.609  FALSE -0.238          4.91  4.67        9.18  8.94  4.67
-#> 19 445   0.878  0.951  FALSE  0.104          4.79  4.89       10.3  10.4   4.89
-#> 20 455   0.626  0.952  FALSE  0.00664        4.43  4.44        9.17  9.18  4.44
-#> # ℹ 5 more variables: Y_denoised <dbl>, dist <dbl>, subclass <chr>, unit <chr>,
-#> #   weights <dbl>
+rt <- result_table(mtch, nonzero_weight_only = TRUE ) 
 ```
+
+You can even plot those units!
+
+``` r
+ggplot( rt, aes( X1, X2, col=as.factor(Z) ) ) +
+  geom_point() +
+   ggforce::geom_circle(
+    data = filter(rt, Z == 1),
+    aes(x0 = X1, y0 = X2, r = 0.6*0.2),
+    inherit.aes = FALSE,
+    color = "black",
+    linetype = "dashed",
+    alpha = 0.6
+  ) +
+  coord_fixed()
+```
+
+<img src="man/figures/README-unnamed-chunk-6-1.png" alt="" width="75%" style="display: block; margin: auto;" />
 
 You can filter to only matches within the initial caliper:
 
 ``` r
-result_table( mtch, feasible_only = TRUE )
-#> # A tibble: 123 × 15
-#>    id       X1    X2 Z       noise Y0_denoised    Y0 Y1_denoised    Y1     Y
-#>    <chr> <dbl> <dbl> <lgl>   <dbl>       <dbl> <dbl>       <dbl> <dbl> <dbl>
-#>  1 1     0.404 0.244 TRUE   0.131         5.05  5.18        7.00  7.13  7.13
-#>  2 18    0.538 0.320 FALSE -0.0744        4.99  4.91        7.56  7.48  4.91
-#>  3 39    0.596 0.245 FALSE -0.541         4.53  3.99        7.05  6.51  3.99
-#>  4 57    0.532 0.254 FALSE -0.769         4.79  4.02        7.14  6.37  4.02
-#>  5 86    0.585 0.129 FALSE -0.271         4.04  3.77        6.18  5.91  3.77
-#>  6 100   0.538 0.352 FALSE  0.125         5.07  5.20        7.74  7.87  5.20
-#>  7 120   0.502 0.286 FALSE -0.316         4.97  4.66        7.34  7.02  4.66
-#>  8 124   0.578 0.181 FALSE  0.431         4.32  4.75        6.60  7.03  4.75
-#>  9 133   0.578 0.154 FALSE  0.520         4.19  4.71        6.39  6.91  4.71
-#> 10 140   0.578 0.419 FALSE -0.400         5.14  4.74        8.13  7.73  4.74
-#> # ℹ 113 more rows
-#> # ℹ 5 more variables: Y_denoised <dbl>, dist <dbl>, subclass <chr>, unit <chr>,
-#> #   weights <dbl>
+rt_feas <- result_table( mtch, feasible_only = TRUE )
 ```
 
 You can also get the final generated result as a data.frame by casting
 the result into a dataframe:
 
 ``` r
-head( as.data.frame( mtch ), n = 10 )
-#> # A tibble: 10 × 15
-#>    id       X1    X2 Z       noise Y0_denoised    Y0 Y1_denoised    Y1     Y
-#>    <chr> <dbl> <dbl> <lgl>   <dbl>       <dbl> <dbl>       <dbl> <dbl> <dbl>
-#>  1 1     0.404 0.244 TRUE   0.131         5.05  5.18        7.00  7.13  7.13
-#>  2 18    0.538 0.320 FALSE -0.0744        4.99  4.91        7.56  7.48  4.91
-#>  3 39    0.596 0.245 FALSE -0.541         4.53  3.99        7.05  6.51  3.99
-#>  4 57    0.532 0.254 FALSE -0.769         4.79  4.02        7.14  6.37  4.02
-#>  5 86    0.585 0.129 FALSE -0.271         4.04  3.77        6.18  5.91  3.77
-#>  6 100   0.538 0.352 FALSE  0.125         5.07  5.20        7.74  7.87  5.20
-#>  7 120   0.502 0.286 FALSE -0.316         4.97  4.66        7.34  7.02  4.66
-#>  8 124   0.578 0.181 FALSE  0.431         4.32  4.75        6.60  7.03  4.75
-#>  9 133   0.578 0.154 FALSE  0.520         4.19  4.71        6.39  6.91  4.71
-#> 10 140   0.578 0.419 FALSE -0.400         5.14  4.74        8.13  7.73  4.74
+head( as.data.frame( mtch ), n = 4 )
+#> # A tibble: 4 × 15
+#>   id       X1    X2     Z  noise Y0_denoised    Y0 Y1_denoised    Y1     Y
+#>   <chr> <dbl> <dbl> <dbl>  <dbl>       <dbl> <dbl>       <dbl> <dbl> <dbl>
+#> 1 1     0.265 0.172     1 -0.402        5.02  4.62        6.33  5.93  5.93
+#> 2 75    0.371 0.134     0  0.842        4.78  5.62        6.29  7.13  5.62
+#> 3 94    0.163 0.184     0 -0.515        5.00  4.48        6.04  5.52  4.48
+#> 4 2     0.284 0.199     1  0.373        5.07  5.44        6.51  6.89  6.89
 #> # ℹ 5 more variables: Y_denoised <dbl>, dist <dbl>, subclass <chr>, unit <chr>,
 #> #   weights <dbl>
 ```
 
-You can estimate impacts on the matched dataset using whatever tools you
-want. The option discussed in our paper is implemented as so:
+Finally, you can estimate impacts on the matched dataset using whatever
+tools you want. The option discussed in our paper is implemented as so:
 
 ``` r
 estimate_ATT( mtch )
 #> # A tibble: 1 × 12
-#>     ATT    SE   N_T   N_C ESS_C sigma_hat    V_E p_drop S0_sq S1_sq  cov_w_s
-#>   <dbl> <dbl> <int> <int> <dbl>     <dbl>  <dbl>  <dbl> <dbl> <dbl>    <dbl>
-#> 1  3.62 0.249     5    14  10.1        NA 0.0618      0 0.200 0.210 -0.00256
-#> # ℹ 1 more variable: t <dbl>
+#>     ATT    SE   N_T   N_C ESS_C sigma_hat   V_E p_drop S0_sq S1_sq cov_w_s     t
+#>   <dbl> <dbl> <int> <int> <dbl>     <dbl> <dbl>  <dbl> <dbl> <dbl>   <dbl> <dbl>
+#> 1  3.28 0.424     6     6  5.07        NA 0.180    0.5 0.280 0.750 -0.0272  7.73
 ```
 
 # Notes on Dependencies
 
-This package has some tricky dependencies. In particular, it
-(optionally) uses a DGP (for simulation) from ACIC 2016. You have to
-install it first from GitHub:
+This package has some tricky dependencies if you are using the
+simulation methods. In particular, it (optionally) uses a DGP (for
+simulation) from ACIC 2016. You have to install it first from GitHub:
 
     remotes::install_github("vdorie/aciccomp/2016")
 
-You should not need this package unless you are generating synthetic
-data.
+You should not need this package unless you are generating the ACIC
+synthetic data.
